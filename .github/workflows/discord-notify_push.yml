@@ -1,0 +1,28 @@
+name: Notify Discord on Push
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  notify_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare message
+        id: prepare
+        run: |
+          REPO="${{ github.repository }}"
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          COMMIT_URL="${{ github.event.head_commit.url }}"
+          ACTOR="${{ github.actor }}"
+          MESSAGE="**🟢 Novi commit u repozitoriju $REPO**\nGrana: \`$BRANCH\`\nAutor: $ACTOR\nPoruka: $COMMIT_MESSAGE\n[Pregledaj commit]($COMMIT_URL)"
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Send notification to Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"${{ steps.prepare.outputs.message }}\"}" \
+               ${{ secrets.DISCORD_WEBHOOK }}

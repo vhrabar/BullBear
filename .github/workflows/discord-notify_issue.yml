@@ -1,0 +1,27 @@
+name: Notify Discord on Issues
+
+on:
+  issues:
+    types: [opened, reopened, closed]
+
+jobs:
+  notify_issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare message
+        id: prepare
+        run: |
+          REPO="${{ github.repository }}"
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_URL="${{ github.event.issue.html_url }}"
+          ACTION="${{ github.event.action }}"
+          ACTOR="${{ github.actor }}"
+          MESSAGE="**🟣 Issue $ACTION u $REPO**\nAutor: $ACTOR\nNaslov: $ISSUE_TITLE\n[Pregledaj issue]($ISSUE_URL)"
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Send notification to Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"${{ steps.prepare.outputs.message }}\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_ISSUE }}

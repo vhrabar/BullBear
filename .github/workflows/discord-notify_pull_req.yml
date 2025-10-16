@@ -1,0 +1,27 @@
+name: Notify Discord on Pull Request
+
+on:
+  pull_request:
+    types: [opened, reopened, closed, merged]
+
+jobs:
+  notify_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare message
+        id: prepare
+        run: |
+          REPO="${{ github.repository }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          ACTION="${{ github.event.action }}"
+          ACTOR="${{ github.actor }}"
+          MESSAGE="**🔵 Pull Request $ACTION u $REPO**\nAutor: $ACTOR\nNaslov: $PR_TITLE\n[Pregledaj PR]($PR_URL)"
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Send notification to Discord
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"${{ steps.prepare.outputs.message }}\"}" \
+               ${{ secrets.DISCORD_WEBHOOK_PULL }}

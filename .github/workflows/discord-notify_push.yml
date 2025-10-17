@@ -22,7 +22,6 @@ jobs:
 
       - name: Send notification to Discord
         run: |
-          curl -H "Content-Type: application/json" \
-               -X POST \
-               -d "{\"content\": \"${{ steps.prepare.outputs.message }}\"}" \
-               ${{ secrets.DISCORD_WEBHOOK }}
+            PAYLOAD=$(jq -n --arg msg "${{ steps.prepare.outputs.message }}" '{content: $msg}')
+            curl -H "Content-Type: application/json" -X POST -d "$PAYLOAD" ${{ secrets.DISCORD_WEBHOOK }}
+

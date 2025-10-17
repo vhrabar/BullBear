@@ -13,7 +13,7 @@ jobs:
         id: prepare
         run: |
           REPO="${{ github.repository }}"
-          BRANCH="${GITHUB_REF#refs/heads/}"
+          BRANCH="${GITHUB_REF_NAME}""
           COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
           COMMIT_URL="${{ github.event.head_commit.url }}"
           ACTOR="${{ github.actor }}"

@@ -1,17 +1,18 @@
-import Hero from './components/Hero'
-import Features from './components/Features'
-import About from './components/About'
-import Footer from './components/Footer'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import './App.css'
 
 function App() {
   return (
-    <div className="app">
-      <Hero />
-      <Features />
-      <About />
-      <Footer />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </Router>
   )
 }
 

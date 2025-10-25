@@ -1,6 +1,7 @@
-from django.urls import path
-from .views import api_auth
+from django.urls import path, include
 
 urlpatterns = [
-    path('auth', api_auth, name='api-auth'),
+    path('', include('dj_rest_auth.urls')),
+    path('registration/', include('dj_rest_auth.registration.urls')),
+    path('', include('allauth.socialaccount.urls')),
 ]

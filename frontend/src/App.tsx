@@ -1,19 +1,13 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import './App.css'
+import React from "react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import AppRouter from "./routes/AppRouter";
 
-function App() {
+const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </Router>
-  )
-}
+    <GoogleOAuthProvider clientId="480645365103-27iedfv3hvtg5i30e158op7kgmmobu7e.apps.googleusercontent.com">
+      <AppRouter /> {}
+    </GoogleOAuthProvider>
+  );
+};
 
-export default App
+export default App;

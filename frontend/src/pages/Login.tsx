@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom'
-import './Login.css'
+import { Link } from "react-router-dom";
+import "./Login.css";
+import GoogleOAuthButton from "../components/GoogleLoginButton";
 
 function Login() {
+
   return (
     <div className="auth-page">
       <nav className="auth-nav">
@@ -17,10 +19,10 @@ function Login() {
           <p className="auth-subtitle">Prijavite se u svoj BullBear račun</p>
 
           <div className="oauth-buttons">
-            <button className="oauth-btn google-btn">
-              <span className="oauth-icon">G</span>
-              Prijava s Google računom
-            </button>
+          <GoogleOAuthButton />
+        </div>
+
+
             <button className="oauth-btn microsoft-btn">
               <span className="oauth-icon">M</span>
               Prijava s Microsoft računom
@@ -28,8 +30,7 @@ function Login() {
           </div>
         </div>
       </div>
-    </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

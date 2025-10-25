@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.microsoft',
     'dj_rest_auth',
     'dj_rest_auth.registration',
 
@@ -63,7 +64,7 @@ AUTH_USER_MODEL = 'users.User'
 
 SITE_ID = 3
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
@@ -74,6 +75,21 @@ JWT_AUTH_REFRESH_COOKIE = 'refresh-token'
 LOGIN_REDIRECT_URL = "http://localhost:5173/"
 LOGOUT_REDIRECT_URL = "http://localhost:5173/"
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+SOCIALACCOUNT_PROVIDERS = {
+    "microsoft": {
+        "SCOPE": [
+            "openid",
+            "email",
+            "profile",
+            "User.Read"
+        ],
+        "AUTH_PARAMS": {"response_type": "code"},
+    }
+}
+
 
 
 # -----------------------------------------------------------
@@ -214,10 +230,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # urlpatterns += [re_path(r'^.*$', TemplateView.as_view(template_name='index.html'))]
 
 
-# -----------------------------------------------------------
-# SECRETS
-# -----------------------------------------------------------
-
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 

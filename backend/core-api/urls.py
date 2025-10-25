@@ -21,5 +21,8 @@ from django.urls import include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/main/', include('api.main.urls')),
-    path('auth/', include('allauth.socialaccount.providers.google.urls'))
+    path('accounts/', include('allauth.account.urls')),
+    path('auth/', include('allauth.socialaccount.urls')),
+    path('auth/', include('allauth.socialaccount.providers.google.urls')),
+    path('auth/', include('allauth.socialaccount.providers.microsoft.urls'))
 ]

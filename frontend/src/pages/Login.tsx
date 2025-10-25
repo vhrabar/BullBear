@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import "./Login.css";
 import GoogleOAuthButton from "../components/GoogleLoginButton";
+import MicrosftAuthButton from "../components/MicrosoftLoginButton";
 
 function Login() {
 
@@ -19,14 +20,9 @@ function Login() {
           <p className="auth-subtitle">Prijavite se u svoj BullBear račun</p>
 
           <div className="oauth-buttons">
-          <GoogleOAuthButton />
+          <GoogleOAuthButton /> <MicrosftAuthButton />
+
         </div>
-
-
-            <button className="oauth-btn microsoft-btn">
-              <span className="oauth-icon">M</span>
-              Prijava s Microsoft računom
-            </button>
           </div>
         </div>
       </div>

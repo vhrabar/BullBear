@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './Hero.css'
 
 function Hero() {
@@ -12,7 +13,7 @@ function Hero() {
           <div className="nav-links">
             <a href="#features">Značajke</a>
             <a href="#about">O projektu</a>
-            <a href="#contact">Kontakt</a>
+            <Link to="/login" className="nav-btn">Prijava</Link>
           </div>
         </div>
       </nav>
@@ -23,12 +24,12 @@ function Hero() {
             Vaša simulacija trgovanja u stvarnom vremenu
           </h1>
           <p className="hero-subtitle">
-            BullBear je brokerska aplikacija za simulirano trgovanje dionicama i ETF-ovima
-            uz tržišne podatke u stvarnom vremenu. Učite i vježbajte trgovanje bez rizika.
+            BullBear je brokerska aplikacija koja omogućava simulirano trgovanje dionicama i ETF-ovima.
+            Testirajte strategije bez gubitka stvarnog kapitala uz pristup tržišnim podacima.
           </p>
           <div className="hero-buttons">
-            <button className="btn btn-primary">Započni trgovanje</button>
-            <button className="btn btn-secondary">Saznaj više</button>
+            <Link to="/register" className="btn btn-primary">Započni trgovanje</Link>
+            <a href="#features" className="btn btn-secondary">Saznaj više</a>
           </div>
         </div>
       </div>

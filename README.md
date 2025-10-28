@@ -1,3 +1,10 @@
+<!-- Light mode -->
+![FER-UNIZG (light)](assets/logo_light_hr.png#gh-light-mode-only)
+
+<!-- Dark mode -->
+![FER-UNIZG (dark)](assets/logo_dark_hr.png#gh-dark-mode-only)
+
+
 # BullBear
 BullBear je brokerska aplikacija za simulirano trgovanje dionicama i ETF-ovima uz tržišne podatke u stvarnom vremen.  Projekt je razvijen na FER, UNIZG u sklopu kolegija Programsko inženjerstvo, s ciljem primjene principa timskog rada, dizajna sustava, dokumentiranja, ispitivanja i modernih metoda razvoja.
 

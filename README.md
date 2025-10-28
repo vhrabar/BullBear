@@ -7,7 +7,7 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
 | ID zahtjeva | Opis                                                                              | Prioritet | Izvor               | Kriteriji prihvaćanja                                                                                                                                     |
 | ----------- | --------------------------------------------------------------------------------- | --------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **FZ-1**    | Sustav mora podržavati prijavu i odjavu korisnika.                                | Visok     | Poslovni zahtjevi   | Korisnik se može uspješno prijaviti s valjanim podacima i odjaviti bez pogrešaka.                                                                         |
-| **FZ-2**    | Sustav mora omogućiti upravljanje profilom i korisničkim podacima.                | Srednji   | Poslovni zahtjevi   | Korisnik može mijenjati osobne podatke, lozinku i spremiti izmjene.                                                                                       |
+| **FZ-2**    | Sustav mora omogućiti upravljanje profilom i korisničkim podacima.                | Srednji   | Poslovni zahtjevi   | Korisnik može mijenjati osobne podatke, te spremiti izmjene.                                                                                       |
 | **FZ-3**    | Sustav mora dohvaćati cijene i podatke o instrumentima, pritom ih keširajući.     | Visok     | Tehnički zahtjevi   | Sustav dohvaća ažurne podatke i koristi keširanje radi bržeg pristupa i smanjenog opterećenja API-ja.                                                     |
 | **FZ-4**    | Sustav mora omogućiti pretraživanje instrumenata po nazivu.                       | Srednji   | Korisnički zahtjevi | Upis djelomičnog ili potpunog naziva instrumenta vraća relevantne rezultate.                                                                              |
 | **FZ-5**    | Sustav mora omogućiti **simuliranu kupnju i prodaju instrumenata**.               | Visok     | Poslovni zahtjevi   | Korisnik može simulirano kupovati i prodavati instrumente; sustav bilježi transakcije, ažurira stanje portfelja i prikazuje promjene u stvarnome vremenu. |
@@ -43,7 +43,7 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
 ![Microsoft Teams](https://img.shields.io/badge/Microsoft_Teams-6264A7?style=for-the-badge&logo=microsoft-teams&logoColor=white)
 
 
-# Instalcija
+# Instalacija
 
 
 # Članovi tima 

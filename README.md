@@ -1,42 +1,60 @@
 # BullBear
 BullBear je brokerska aplikacija za simulirano trgovanje dionicama i ETF-ovima uz tržišne podatke u stvarnom vremen.  Projekt je razvijen na FER, UNIZG u sklopu kolegija Programsko inženjerstvo, s ciljem primjene principa timskog rada, dizajna sustava, dokumentiranja, ispitivanja i modernih metoda razvoja.
 
-# Opis projekta
 Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Programsko inženjerstvo](https://www.fer.unizg.hr/predmet/proinz) na Fakultetu elektrotehnike i računarstva Sveučilišta u Zagrebu. 
 
-Kratko opisati cilj Vašeg projekta. Vaša motivacija?  (Napomena: odgovor nije »Zato što je to bio zadatak i nismo imali ideje za drugo.«). Koji problem rješavate?
-> Obzirom da je ovo zadani projekt navedite i što želite/jeste novo  naučili.
-
-> Dobro izrađen opis omogućuje vam da pokažete svoj rad drugim programerima, kao i potencijalnim poslodavcima. Ne samo da prvi dojam na stranici opisa često razlikuje dobar projekt od lošeg projekta već i predstavlja dobru praksu koju morate savladati.
-
 # Funkcijski zahtjevi
-> Navedite ključne zahtjeve Vašeg projekta.
+| ID zahtjeva | Opis                                                                              | Prioritet | Izvor               | Kriteriji prihvaćanja                                                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------- | --------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **FZ-1**    | Sustav mora podržavati prijavu i odjavu korisnika.                                | Visok     | Poslovni zahtjevi   | Korisnik se može uspješno prijaviti s valjanim podacima i odjaviti bez pogrešaka.                                                                         |
+| **FZ-2**    | Sustav mora omogućiti upravljanje profilom i korisničkim podacima.                | Srednji   | Poslovni zahtjevi   | Korisnik može mijenjati osobne podatke, lozinku i spremiti izmjene.                                                                                       |
+| **FZ-3**    | Sustav mora dohvaćati cijene i podatke o instrumentima, pritom ih keširajući.     | Visok     | Tehnički zahtjevi   | Sustav dohvaća ažurne podatke i koristi keširanje radi bržeg pristupa i smanjenog opterećenja API-ja.                                                     |
+| **FZ-4**    | Sustav mora omogućiti pretraživanje instrumenata po nazivu.                       | Srednji   | Korisnički zahtjevi | Upis djelomičnog ili potpunog naziva instrumenta vraća relevantne rezultate.                                                                              |
+| **FZ-5**    | Sustav mora omogućiti **simuliranu kupnju i prodaju instrumenata**.               | Visok     | Poslovni zahtjevi   | Korisnik može simulirano kupovati i prodavati instrumente; sustav bilježi transakcije, ažurira stanje portfelja i prikazuje promjene u stvarnome vremenu. |
+| **FZ-6**    | Sustav mora izračunavati vrijednosti u stvarnome vremenu.                         | Visok     | Tehnički zahtjevi   | Promjene cijena instrumenata odmah se reflektiraju na ukupnu vrijednost portfelja.                                                                        |
+| **FZ-7**    | Sustav mora prikazivati sve relevantne informacije korisniku u grafičkome obliku. | Srednji   | Korisnički zahtjevi | Grafovi i pokazatelji dinamički prikazuju tržišne promjene i rezultate korisnika.                                                                         |
+| **FZ-8**    | Sustav mora omogućiti upravljanje i brisanje portfelja.                           | Srednji   | Poslovni zahtjevi   | Korisnik može kreirati, preimenovati i brisati portfelje; sustav automatski ažurira povezane podatke.                                                     |
+| **FZ-9**    | Sustav mora omogućiti uvoz i izvoz CSV datoteka s poviješću transakcija.          | Nizak     | Tehnički zahtjevi   | Korisnik može uvesti i izvesti CSV datoteke s točnim i potpunim zapisima o transakcijama.                                                                 |
+| **FZ-10**   | Sustav mora prikazivati sortiranu ljestvicu javnih korisnika prema prinosu.       | Srednji   | Korisnički zahtjevi | Rang lista javnih korisnika automatski se sortira prema postotnom prinosu i redovito ažurira.                                                             |
+| **FZ-11**   | Sustav mora omogućiti kreiranje i upravljanje Mini-Fondovima.                     | Srednji   | Poslovni zahtjevi   | Korisnik može osnovati Mini-Fond, dodavati članove i instrumente te pratiti kolektivni prinos.                                                            |
+| **FZ-12**   | Sustav mora omogućiti interakciju s drugim korisnicima.                           | Nizak     | Korisnički zahtjevi | Korisnici mogu međusobno komunicirati, komentirati i dijeliti rezultate simulacija unutar sustava.                                                        |
+
 
 
 # Tehnologije
-[![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)][djnago]
-[![Django-Rest](https://img.shields.io/badge/django--rest--framework-3.12.4-blue?style=for-the-badge&labelColor=333333&logo=django&logoColor=white&color=blue)][djnago-rest]
+![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
+![Django-Rest](https://img.shields.io/badge/django--rest--framework-3.12.4-blue?style=for-the-badge&labelColor=333333&logo=django&logoColor=white&color=blue)
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white&style=for-the-badge)
+
 &ensp;
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)][postgres]
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 &ensp;
-[![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)][docker]
+![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)][github]
-[![GitHub Actions](https://img.shields.io/badge/Github%20Actions-282a2e?style=for-the-badge&logo=githubactions&logoColor=367cfe)][github-actions]
+![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/Github%20Actions-282a2e?style=for-the-badge&logo=githubactions&logoColor=367cfe)
 
 
-[![VSCode](https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)][vscode]
+![VSCode](https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)
+![PyCharm Pro](https://img.shields.io/badge/JetBrains%20PyCharm%20Pro-000000?logo=pycharm&logoColor=white&style=for-the-badge)
+![DataGrip](https://img.shields.io/badge/JetBrains%20DataGrip-000000?logo=datagrip&logoColor=white&style=for-the-badge)
 &ensp;
-[![PyCharm](https://img.shields.io/badge/PyCharm-IDE-blue?logo=https://upload.wikimedia.org/wikipedia/commons/d/d0/PyCharm_Icon.svg)][pycharm]
 
-[![Microsoft Teams](https://img.shields.io/badge/Microsoft_Teams-6264A7?style=for-the-badge&logo=microsoft-teams&logoColor=white)][microsoft-teams]
+![Microsoft Teams](https://img.shields.io/badge/Microsoft_Teams-6264A7?style=for-the-badge&logo=microsoft-teams&logoColor=white)
 
 
 # Instalcija
 
 
 # Članovi tima 
-
+| Ime i prezime                  | GitHub profil                                        | Uloga u timu                                                | Odgovornosti                                                                                                                                             |
+| ------------------------------ | ---------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vedran Hrabar**              | [@vhrabar](https://github.com/vhrabar)               | Voditelj tima / DevOps / Frontend / Backend / Baze podataka | Koordinira razvojni proces, održava CI/CD okruženja, razvija ključne komponente frontenda i backenda te upravlja bazama podataka.                        |
+| **Antun Silov**                | [@AntunSilov](https://github.com/AntunSilov)         | Backend razvojni inženjer                                   | Razvija API funkcionalnosti, implementira poslovnu logiku i održava stabilnost komunikacije s bazom podataka.                                            |
+| **Leon Zorko**                 | [@LeonZorko](https://github.com/LeonZorko)           | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
+| **Vedran Radojčić** *(remote)* | [@VedranRadojcic](https://github.com/VedranRadojcic) | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
+| **Viktor Lazić**               | [@ViktorLazic3](https://github.com/ViktorLazic3)     | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
+| **Luka Varga**                 | [@MegaNoris](https://github.com/MegaNoris)           | Full-stack razvojni inženjer                                | Radi na povezivanju frontenda i backenda, unaprjeđuje performanse sustava i osigurava tehničku stabilnost aplikacije.                                    |
 
 
 

@@ -1,3 +1,5 @@
+> 🇭🇷 [Hrvatski](README.md) | 🇬🇧 [English](README.en.md)
+
 <!-- Light mode -->
 ![FER-UNIZG (light)](assets/logo_light_hr.png#gh-light-mode-only)
 
@@ -25,7 +27,14 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
 | **FZ-10**   | Sustav mora prikazivati sortiranu ljestvicu javnih korisnika prema prinosu.       | Srednji   | Korisnički zahtjevi | Rang lista javnih korisnika automatski se sortira prema postotnom prinosu i redovito ažurira.                                                             |
 | **FZ-11**   | Sustav mora omogućiti kreiranje i upravljanje Mini-Fondovima.                     | Srednji   | Poslovni zahtjevi   | Korisnik može osnovati Mini-Fond, dodavati članove i instrumente te pratiti kolektivni prinos.                                                            |
 | **FZ-12**   | Sustav mora omogućiti interakciju s drugim korisnicima.                           | Nizak     | Korisnički zahtjevi | Korisnici mogu međusobno komunicirati, komentirati i dijeliti rezultate simulacija unutar sustava.                                                        |
-
+| **FZ-13** | Sustav mora omogućiti kreiranje i upravljanje Mini-Fondovima.                                                | Srednji       | Korisnički zahtjevi    | Korisnik može kreirati, uređivati i dijeliti popise omiljenih instrumenata.                                          |
+| **FZ-14** | Sustav mora omogućiti kupnju i obnovu premium pretplate.                       | Visok         | Tehnička specifikacija | Korisnik može uspješno aktivirati i produžiti premium pretplatu.                                                     |
+| **FZ-15** | Sustav mora omogućiti administratorima upravljanje korisnicima i postavljanje cijene pretplate.              | Visok         | Poslovna pravila       | Administrator može mijenjati cijene i blokirati korisnike putem administratorskog sučelja.                           |
+| **FZ-16** | Sustav mora omogućiti korisnicima da odaberu je li njihov profil javan ili privatan.                         | Srednji       | Korisnički zahtjevi    | Korisnik može promijeniti vidljivost profila; privatni profili nisu uključeni u ljestvicu.                           |
+| **FZ-17** | Sustav mora omogućiti usporedbu prinosa korisnika s tržišnim indeksima (S&P 500, NASDAQ, EURONEXT 100).      | Nizak         | Tehnička specifikacija | Sustav prikazuje grafičku usporedbu prinosa korisnika s indeksima.                                                   |
+| **FZ-18** | Sustav mora prikazivati pokazatelje rizika, uključujući volatilnost i beta vrijednost.                       | Nizak         | Tehnička specifikacija | U sučelju se prikazuju vrijednosti standardne devijacije i beta koeficijenta.                                        |
+| **FZ-19** | Sustav mora omogućiti dodavanje i uklanjanje instrumenata s popisa omiljenih instrumenata.                   | Srednji       | Korisnički zahtjevi    | Korisnik može dodati instrument u popis omiljenih i ukloniti ga po želji.                                            |
+                                                             
 
 
 # Tehnologije
@@ -87,7 +96,7 @@ docker compose exec frontend npm test
 | **Vedran Hrabar**              | [@vhrabar](https://github.com/vhrabar)               | Voditelj tima / DevOps / Frontend / Backend / Baze podataka | Koordinira razvojni proces, održava CI/CD okruženja, razvija ključne komponente frontenda i backenda te upravlja bazama podataka.                        |
 | **Antun Silov**                | [@AntunSilov](https://github.com/AntunSilov)         | Backend razvojni inženjer                                   | Razvija API funkcionalnosti, implementira poslovnu logiku i održava stabilnost komunikacije s bazom podataka.                                            |
 | **Leon Zorko**                 | [@LeonZorko](https://github.com/LeonZorko)           | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
-| **Vedran Radojčić** *(remote)* | [@VedranRadojcic](https://github.com/VedranRadojcic) | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
+| **Vedran Radojčić**            | [@VedranRadojcic](https://github.com/VedranRadojcic) | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
 | **Viktor Lazić**               | [@ViktorLazic3](https://github.com/ViktorLazic3)     | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
 | **Luka Varga**                 | [@MegaNoris](https://github.com/MegaNoris)           | Full-stack razvojni inženjer                                | Radi na povezivanju frontenda i backenda, unaprjeđuje performanse sustava i osigurava tehničku stabilnost aplikacije.                                    |
 

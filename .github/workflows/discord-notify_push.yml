@@ -25,9 +25,7 @@ jobs:
 
       - name: Send notification to Discord
         run: |
-          python3 - <<'PY'
-import json
-content = """${{ steps.prepare.outputs.message }}"""
-print(json.dumps({"content": content}))
-PY > body.json
-          curl -H "Content-Type: application/json" -X POST -d @body.json ${{ secrets.DISCORD_WEBHOOK }}
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"${{ steps.prepare.outputs.message }}\"}" \
+               ${{ secrets.DISCORD_WEBHOOK }}

@@ -45,10 +45,26 @@
   text-decoration: none;
   font-weight: 500;
   transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
 }
 
 .nav-links a:hover {
   opacity: 0.8;
+}
+
+.nav-btn {
+  padding: 0.5rem 1.5rem;
+  background: white;
+  color: #1e3a8a;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.nav-btn:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .hero-content {
@@ -93,6 +109,9 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
 }
 
 .btn-primary {

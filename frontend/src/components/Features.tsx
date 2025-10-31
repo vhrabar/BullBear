@@ -9,28 +9,28 @@ function Features() {
     },
     {
       icon: '💰',
-      title: 'Simulirano trgovanje',
-      description: 'Vježbajte strategije trgovanja bez rizika sa virtualnim novcem.'
+      title: 'Paper Trading',
+      description: 'Simulirajte trgovanje bez rizika gubitka stvarnog kapitala. Uvezite prethodne transakcije u CSV formatu.'
     },
     {
       icon: '📈',
-      title: 'Praćenje portfelja',
+      title: 'Analiza portfelja',
       description: 'Pratite performanse svog portfelja i analizirajte rezultate.'
     },
     {
-      icon: '🎓',
-      title: 'Edukativni projekt',
-      description: 'Razvijeno na FER-u, UNIZG u sklopu kolegija Programsko inženjerstvo.'
+      icon: '🏆',
+      title: 'Ljestvice i natjecanje',
+      description: 'Javni profili s vidljivim transakcijama na ukupnoj ljestvici. Usporedite se s drugim korisnicima.'
     },
     {
-      icon: '🔒',
-      title: 'Sigurno okruženje',
-      description: 'Učite i eksperimentirajte u sigurnom, izoliranom okruženju.'
+      icon: '📂',
+      title: 'Mini fondovi',
+      description: 'Kreirajte popise omiljenih instrumenata i dijelite ih s drugim korisnicima platforme.'
     },
     {
-      icon: '📱',
-      title: 'Responzivan dizajn',
-      description: 'Pristupite aplikaciji s bilo kojeg uređaja - desktop, tablet ili mobitel.'
+      icon: '⭐',
+      title: 'Premium paket',
+      description: 'Napredne funkcije za premium korisnike - push notifikacije, dodatne analize i više.'
     }
   ]
 

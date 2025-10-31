@@ -1,18 +1,13 @@
-import Hero from './components/Hero'
-import Features from './components/Features'
-import About from './components/About'
-import Footer from './components/Footer'
-import './App.css'
+import React from "react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import AppRouter from "./routes/AppRouter";
 
-function App() {
+const App: React.FC = () => {
   return (
-    <div className="app">
-      <Hero />
-      <Features />
-      <About />
-      <Footer />
-    </div>
-  )
-}
+    <GoogleOAuthProvider clientId="480645365103-27iedfv3hvtg5i30e158op7kgmmobu7e.apps.googleusercontent.com">
+      <AppRouter /> {}
+    </GoogleOAuthProvider>
+  );
+};
 
-export default App
+export default App;

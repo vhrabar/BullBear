@@ -18,11 +18,16 @@ jobs:
           COMMIT_URL="${{ github.event.head_commit.url }}"
           ACTOR="${{ github.actor }}"
           MESSAGE="**🟢 Novi commit u repozitoriju $REPO**\nGrana: \`$BRANCH\`\nAutor: $ACTOR\nPoruka: $COMMIT_MESSAGE\n[Pregledaj commit]($COMMIT_URL)"
-          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+          # write multi-line output safely
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send notification to Discord
         run: |
-          curl -H "Content-Type: application/json" \
-               -X POST \
-               -d "{\"content\": \"${{ steps.prepare.outputs.message }}\"}" \
-               ${{ secrets.DISCORD_WEBHOOK }}
+          python3 - <<'PY'
+import json
+content = """${{ steps.prepare.outputs.message }}"""
+print(json.dumps({"content": content}))
+PY > body.json
+          curl -H "Content-Type: application/json" -X POST -d @body.json ${{ secrets.DISCORD_WEBHOOK }}

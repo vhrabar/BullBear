@@ -28,6 +28,9 @@ ALLOWED_HOSTS = ['*']  # Adjust for production (e.g., ['your-domain.com'])
 # -----------------------------------------------------------
 
 INSTALLED_APPS = [
+    # Jazzmin Admin Interface
+    'jazzmin',
+
     # Default Django apps
     'django.contrib.admin',
     'django.contrib.auth',

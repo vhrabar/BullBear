@@ -11,7 +11,7 @@ class PortfolioHoldingViewSet(viewsets.ModelViewSet):
         # Only return holdings belonging to the logged-in user
         user = self.request.user
         return PortfolioHolding.objects.select_related('portfolio', 'instrument').filter(
-            portfolio__user=user
+            portfolio__user=user.profile
         )
 
     def perform_create(self, serializer):

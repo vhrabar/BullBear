@@ -31,7 +31,7 @@ urlpatterns = [
     path('accounts/', include('allauth.account.urls')),
     path('auth/', include('allauth.socialaccount.urls')),
     path('auth/', include('allauth.socialaccount.providers.google.urls')),
-    path('auth/', include('allauth.socialaccount.providers.microsoft.urls'))
+    path('auth/', include('allauth.socialaccount.providers.microsoft.urls')),
 
     # Trading
     path('api/trading/', include('api.trading.urls')),

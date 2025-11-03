@@ -5,7 +5,7 @@ from .views import InstrumentViewSet, InstrumentIntervalDataViewSet, PortfolioHo
 router = DefaultRouter()
 router.register(r'instruments', InstrumentViewSet)
 router.register(r'instrument-data', InstrumentIntervalDataViewSet)
-router.register(r'portfolio-holdings', PortfolioHoldingViewSet)
+router.register(r'portfolio-holdings', PortfolioHoldingViewSet, basename='portfolio-holdings')
 
 urlpatterns = [
     path('', include(router.urls)),

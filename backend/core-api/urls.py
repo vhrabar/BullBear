@@ -19,10 +19,20 @@ from django.urls import path
 from django.urls import include
 
 urlpatterns = [
+    # Admin site
     path('admin/', admin.site.urls),
+
+    # ===== API Endpoints =====
+
+    # Main
     path('api/main/', include('api.main.urls')),
+
+    # Users
     path('accounts/', include('allauth.account.urls')),
     path('auth/', include('allauth.socialaccount.urls')),
     path('auth/', include('allauth.socialaccount.providers.google.urls')),
     path('auth/', include('allauth.socialaccount.providers.microsoft.urls'))
+
+    # Trading
+    path('api/trading/', include('api.trading.urls')),
 ]

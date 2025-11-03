@@ -1,5 +1,5 @@
 from django.db import models
-from backend.api.users.models import UserProfile as Profile, UserPortfolio as Portfolio
+from api.users.models import UserProfile as Profile, UserPortfolio as Portfolio
 
 
 class Instrument(models.Model):

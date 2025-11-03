@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     # Local apps
     'api.main',
     'api.users',
+    'api.trading',
 
 ]
 

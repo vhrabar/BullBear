@@ -9,6 +9,6 @@ router.register(r'portfolio-holdings', PortfolioHoldingViewSet, basename='portfo
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('buy/', BuyInstrumentView.as_view(), name='buy-instrument'),
-    path('sell/', SellInstrumentView.as_view(), name='sell-instrument'),
+    path('buy', BuyInstrumentView.as_view(), name='buy-instrument'),
+    path('sell', SellInstrumentView.as_view(), name='sell-instrument'),
 ]

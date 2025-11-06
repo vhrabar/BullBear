@@ -9,7 +9,6 @@ from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
-TEST_USERNAME = ""  # input a username with an existing profile and portfolio
 
 class PortfolioHoldingViewSet(viewsets.ModelViewSet):
     serializer_class = PortfolioHoldingSerializer
@@ -40,9 +39,8 @@ class InstrumentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = InstrumentSerializer
     permission_classes = [permissions.AllowAny]
 
-# uncomment decorators for testing
 
-#@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
 class BuyInstrumentView(APIView):
     permission_classes = []
 
@@ -50,7 +48,7 @@ class BuyInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        profile = UserProfile.objects.get(user__username=TEST_USERNAME)
+        profile = request.user.profile
         portfolio = UserPortfolio.objects.get(user=profile)
 
         holding = buy_instrument(
@@ -63,7 +61,7 @@ class BuyInstrumentView(APIView):
         return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
 
 
-#@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
 class SellInstrumentView(APIView):
     permission_classes = []
 
@@ -71,9 +69,9 @@ class SellInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        profile = UserProfile.objects.get(user__username=TEST_USERNAME)
+        profile = request.user.profile
         portfolio = UserPortfolio.objects.get(user=profile)
-        
+
         holding = sell_instrument(
             portfolio=portfolio,
             instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore

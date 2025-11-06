@@ -1,7 +1,15 @@
 from rest_framework import viewsets, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from .models import PortfolioHolding, InstrumentIntervalData, Instrument
-from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer
+from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, BuySellSerializer
+from .services import buy_instrument, sell_instrument
+from api.users.models import UserProfile, UserPortfolio
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
+TEST_USERNAME = ""  # input a username with an existing profile and portfolio
 
 class PortfolioHoldingViewSet(viewsets.ModelViewSet):
     serializer_class = PortfolioHoldingSerializer
@@ -31,4 +39,47 @@ class InstrumentViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Instrument.objects.filter(is_active=True)
     serializer_class = InstrumentSerializer
     permission_classes = [permissions.AllowAny]
+
+# uncomment decorators for testing
+
+#@method_decorator(csrf_exempt, name='dispatch')
+class BuyInstrumentView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        serializer = BuySellSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        profile = UserProfile.objects.get(user__username=TEST_USERNAME)
+        portfolio = UserPortfolio.objects.get(user=profile)
+
+        holding = buy_instrument(
+            portfolio=portfolio,
+            instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
+            quantity=serializer.validated_data['quantity'], # type: ignore
+            price=serializer.validated_data.get('price')    # type: ignore
+        )
+
+        return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+
+
+#@method_decorator(csrf_exempt, name='dispatch')
+class SellInstrumentView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        serializer = BuySellSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        profile = UserProfile.objects.get(user__username=TEST_USERNAME)
+        portfolio = UserPortfolio.objects.get(user=profile)
+        
+        holding = sell_instrument(
+            portfolio=portfolio,
+            instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
+            quantity=serializer.validated_data['quantity'], # type: ignore
+            price=serializer.validated_data.get('price')    # type: ignore
+        )
+
+        return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
 

@@ -24,3 +24,8 @@ class PortfolioHoldingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PortfolioHolding
         fields = '__all__'
+
+class BuySellSerializer(serializers.Serializer):
+    instrument_symbol = serializers.CharField(max_length=16)
+    quantity = serializers.DecimalField(max_digits=20, decimal_places=4)
+    price = serializers.DecimalField(max_digits=20, decimal_places=6, required=False)

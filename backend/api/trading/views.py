@@ -52,7 +52,7 @@ class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):
             return (
                 InstrumentIntervalData.objects
                 .select_related('instrument')
-                .filter(instrument__name__iexact=instrument_name)
+                .filter(instrument__symbol__iexact=instrument_name)
                 .order_by('-start_time')[:1]
             )
 

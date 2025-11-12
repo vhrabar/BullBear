@@ -1,25 +1,40 @@
 #container {
-  display: grid;
-  grid-template-columns: auto auto auto auto;
-  background-color: lightgray;
-  padding: 0.4rem;
-  height: 100vh;
+  min-height: 100vh;
+  min-width: 100%;
+  border-collapse: collapse;
 }
-#container div {
+#container td, th {
     background-color: gray;
-    border: 0.2rem solid black;
-    border-radius: 10px;
     font-size: 2rem;
     text-align: center;
-    margin: 0.4rem;
     height: fit-content;
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.5rem;
+}
+#container td {
+  border-top: 1px solid black;
+}
+
+#container th {
+  font-size: 2rem;
+  border-bottom: 1px solid black;
+}
+#container div {
+  text-align: end;
 }
 
 #error {
     font-size: 8rem;
 }
 
+#container-root {
+  background-color: lightgray;
+  padding: 0.6rem;
+}
+
+.corpo {
+  font-size: 1.5rem;
+  color: rgb(44, 44, 44);
+}
 
 .auth-nav {
   padding: 1.5rem 2rem;

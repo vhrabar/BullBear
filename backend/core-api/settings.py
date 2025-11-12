@@ -41,6 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "django_extensions",
 
+    # Local apps
+    'api.main',
+    'api.users',
+    'api.trading',
+
     # Third-party apps
     'rest_framework',
     'rest_framework.authtoken',
@@ -54,12 +59,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.microsoft',
     'dj_rest_auth',
     'dj_rest_auth.registration',
-
-    # Local apps
-    'api.main',
-    'api.users',
-    'api.trading',
-
 ]
 
 # AUTH

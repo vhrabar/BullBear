@@ -39,6 +39,7 @@ class UserPortfolio(models.Model):
     """Represents one user's investment portfolio."""
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="portfolios")
     name = models.CharField(max_length=64)
+    balance = models.DecimalField(decimal_places=2, default=10000, max_digits=20)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)

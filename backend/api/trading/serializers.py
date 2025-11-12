@@ -16,6 +16,14 @@ class InstrumentIntervalDataSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class LatestInstrumentDataSerializer(serializers.ModelSerializer):
+    instrument = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = InstrumentIntervalData
+        fields = '__all__'
+
+
 class PortfolioHoldingSerializer(serializers.ModelSerializer):
     instrument = serializers.StringRelatedField(read_only=True)
     current_value = serializers.DecimalField(max_digits=20, decimal_places=6, read_only=True)

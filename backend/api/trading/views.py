@@ -1,9 +1,11 @@
+from django.db.models import OuterRef, Subquery
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PortfolioHolding, InstrumentIntervalData, Instrument
-from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, BuySellSerializer
+from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
+    BuySellSerializer, LatestInstrumentDataSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
@@ -32,6 +34,45 @@ class InstrumentIntervalDataViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = InstrumentIntervalData.objects.select_related('instrument').all()
     serializer_class = InstrumentIntervalDataSerializer
     permission_classes = [permissions.AllowAny]
+
+
+class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Returns the latest interval data per instrument.
+    Optional filter: ?instrument=<instrument_name>
+    """
+    serializer_class = LatestInstrumentDataSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        instrument_name = self.request.query_params.get('instrument')
+
+        # If instrument name is provided -> filter by that instrument
+        if instrument_name:
+            return (
+                InstrumentIntervalData.objects
+                .select_related('instrument')
+                .filter(instrument__name__iexact=instrument_name)
+                .order_by('-start_time')[:1]
+            )
+
+        # if no instrument name is provided -> return latest data for all instruments
+        subquery = (
+            InstrumentIntervalData.objects
+            .filter(instrument=OuterRef('instrument'))
+            .order_by('-start_time')
+            .values('id')[:1]
+        )
+
+        queryset = (
+            InstrumentIntervalData.objects
+            .filter(id__in=Subquery(subquery))
+            .select_related('instrument')
+            .order_by('instrument__symbol')
+        )
+
+        return queryset
+
 
 
 class InstrumentViewSet(viewsets.ReadOnlyModelViewSet):

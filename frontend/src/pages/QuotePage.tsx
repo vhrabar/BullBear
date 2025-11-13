@@ -57,7 +57,8 @@ function QuotePage() {
           i.instrument.toLowerCase().startsWith(symbol.toLowerCase())
         );
         setHolding(found || null);
-      });
+      })
+      .catch(() => setHolding(null));
   }, [symbol]);
 
   // Fetch latest quote

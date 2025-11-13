@@ -5,17 +5,17 @@ import Login from "../pages/Login";
 import PortfolioPage from "../pages/PortofolioPage.tsx";
 import Layout from "../components/Layout.tsx";
 import QuotePage from "../pages/QuotePage.tsx";
-
-
+import ExchangePage from "../pages/ExplorePage.tsx";
 
 const AppRouter: React.FC = () => {
   return (
     <Router>
       <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
 
-          <Route
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+
+        <Route
           path="/positions"
           element={
             <Layout>
@@ -32,6 +32,16 @@ const AppRouter: React.FC = () => {
             </Layout>
           }
         />
+
+        <Route
+          path="/explore"
+          element={
+            <Layout>
+              <ExchangePage />
+            </Layout>
+          }
+        />
+
       </Routes>
     </Router>
   );

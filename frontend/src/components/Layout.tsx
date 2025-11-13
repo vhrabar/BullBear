@@ -17,8 +17,11 @@ function Layout({ children }: LayoutProps) {
         </div>
 
         <nav className="side-nav">
-          <Link to="/" className="side-link">
+          <Link to="/positions" className="side-link">
             Portfolio
+          </Link>
+            <Link to="/explore" className="side-link">
+            Explore
           </Link>
         </nav>
       </aside>

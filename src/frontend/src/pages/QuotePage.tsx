@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import StockPanel from "../components/StockPanel";
+import StockPanel from "../components/StockPanel.tsx";
 
 interface Holding {
   id: number;

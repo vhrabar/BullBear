@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "../pages/Home";
-import Login from "../pages/Login";
+import Home from "../pages/Home.tsx";
+import Login from "../pages/Login.tsx";
 import PortfolioPage from "../pages/PortofolioPage.tsx";
 import Layout from "../components/Layout.tsx";
 import QuotePage from "../pages/QuotePage.tsx";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import StockView from "../components/StockView";
+import StockView from "../components/StockView.tsx";
 
 function PortfolioPage() {
   const [balance, setBalance] = useState(null);

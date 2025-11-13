@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import "./Login.css";
-import GoogleOAuthButton from "../components/GoogleLoginButton";
-import MicrosftAuthButton from "../components/MicrosoftLoginButton";
+import GoogleOAuthButton from "../components/GoogleLoginButton.tsx";
+import MicrosftAuthButton from "../components/MicrosoftLoginButton.tsx";
 
 function Login() {
 

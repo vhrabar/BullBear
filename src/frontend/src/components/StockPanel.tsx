@@ -1,5 +1,5 @@
 import { useState } from "react";
-import TradeDialog from "./TradeDialog";
+import TradeDialog from "./TradeDialog.tsx";
 
 
 import "./StockPanel.css";

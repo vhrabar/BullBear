@@ -1,54 +1,77 @@
-import {Holding} from "./StockView";
 import "./StockPanel.css";
 
-interface StockPanelProps {
-    selected: Holding | null,
-    latest?: LatestData | null
+interface Instrument {
+  symbol: string;
+  name: string;
 }
 
+interface Holding {
+  quantity: string;
+  current_value: string;
+  average_price: string;
+  profit_loss: string;
+  instrument: string;
+}
 
 interface LatestData {
-    ask_price: number;
-    bid_price: number;
-    ask_size: number;
-    bid_size: number;
+  bid_price?: string;
+  bid_size?: number;
+  ask_price?: string;
+  ask_size?: number;
+  last_price?: string;
+  daily_change?: string;
+  daily_change_percent?: string;
+
+  open_price?: string;
+  high_price?: string;
+  low_price?: string;
+  close_price?: string;
 }
 
-function StockPanel({selected, latest}: StockPanelProps) {
-    if (!selected) {
+interface StockPanelProps {
+  stock: Instrument | null;
+  holding?: Holding | null;
+  latest?: LatestData | null;
+}
+
+
+function StockPanel({ stock, holding, latest }: StockPanelProps) {
+
+    if (!stock) {
         return (
             <div className="stock-panel empty">
                 <div className="empty-message">
-                    No stock selected. Please select a stock from your portfolio.
+                    No stock selected.
                 </div>
             </div>
         );
     }
 
-    const [tickerPart, companyPartRaw] = selected.instrument.split("(");
-    const companyPart = companyPartRaw ? companyPartRaw.split(")")[0] : "";
+    const ticker = stock.symbol;
+    const company = stock.name;
+
 
     return (
         <div className="stock-panel">
             <div className="stock-panel-header">
+
                 <div>
                     <div className="stock-name">
-                        {tickerPart.trim()} <span className="company-name">{companyPart}</span>
+                        {ticker} <span className="company-name">{company}</span>
                     </div>
-                    <div className="stock-sub">
-                        Current value: {selected.current_value} | Quantity: {selected.quantity}
-                    </div>
+
+                    {latest && (
+                        <div className="stock-sub">
+                            <div>
+                                Buy: {latest.ask_price} | Sell: {latest.bid_price}
+                            </div>
+                            <div>
+                                Size: {latest.ask_size} | {latest.bid_size}
+                            </div>
+                        </div>
+                    )}
                 </div>
-                {latest && (
-                    <div className="stock-sub">
-                        <div>
-                            Buy: {latest.ask_price} | Sell: {latest.bid_price}
-                        </div>
-                        <div>
-                            Size: {latest.ask_size} | {latest.bid_size}
-                        </div>
-                    </div>
-                )}
+
                 <div className="stock-actions">
                     <button className="btn buy">Buy</button>
                     <button className="btn sell">Sell</button>
@@ -57,37 +80,66 @@ function StockPanel({selected, latest}: StockPanelProps) {
 
             <div className="stock-panel-main">
                 <div className="stock-main-left">
+
                     <div className="chart-placeholder">
                         <div className="chart-title">Price chart (placeholder)</div>
-                        <div className="chart-body">
-                        </div>
+                        <div className="chart-body"></div>
                     </div>
 
                     <div className="metrics-card">
+
                         <div className="metric-row">
-                            <span>Shares</span>
-                            <span>{selected.quantity}</span>
+                            <span>Open</span>
+                            <span>{latest?.open_price ?? "—"}</span>
                         </div>
+
                         <div className="metric-row">
-                            <span>Market Value</span>
-                            <span>{selected.current_value}</span>
+                            <span>Close</span>
+                            <span>{latest?.close_price ?? "—"}</span>
                         </div>
+
                         <div className="metric-row">
-                            <span>Average Price</span>
-                            <span>{selected.average_price}</span>
+                            <span>High</span>
+                            <span>{latest?.high_price ?? "—"}</span>
                         </div>
+
                         <div className="metric-row">
-                            <span>Profit / Loss</span>
-                            <span
-                                style={
-                                    selected.profit_loss[0] === "-"
-                                        ? {color: "red"}
-                                        : {color: "green"}
-                                }
-                            >
-                {selected.profit_loss}
-              </span>
+                            <span>Low</span>
+                            <span>{latest?.low_price ?? "—"}</span>
                         </div>
+
+                        {holding && (
+                            <>
+                                <div className="metric-row">
+                                    <span>Shares Owned</span>
+                                    <span>{holding.quantity}</span>
+                                </div>
+
+                                <div className="metric-row">
+                                    <span>Average Price</span>
+                                    <span>{holding.average_price}</span>
+                                </div>
+
+                                <div className="metric-row">
+                                    <span>Market Value</span>
+                                    <span>{holding.current_value}</span>
+                                </div>
+
+                                <div className="metric-row">
+                                    <span>Profit/Loss</span>
+                                    <span
+                                        style={
+                                            holding.profit_loss.startsWith("-")
+                                                ? { color: "red" }
+                                                : { color: "green" }
+                                        }
+                                    >
+                                        {holding.profit_loss}
+                                    </span>
+                                </div>
+                            </>
+                        )}
+
                     </div>
                 </div>
 
@@ -95,9 +147,9 @@ function StockPanel({selected, latest}: StockPanelProps) {
                     <section className="panel-section">
                         <h3>Hot News</h3>
                         <ul className="simple-list">
-                            <li>News 1 about {tickerPart.trim()} (placeholder)</li>
-                            <li>News 2 about {tickerPart.trim()} (placeholder)</li>
-                            <li>News 3 about {tickerPart.trim()} (placeholder)</li>
+                            <li>News 1 about {ticker} (placeholder)</li>
+                            <li>News 2 about {ticker} (placeholder)</li>
+                            <li>News 3 about {ticker} (placeholder)</li>
                         </ul>
                     </section>
 
@@ -126,6 +178,7 @@ function StockPanel({selected, latest}: StockPanelProps) {
                     </div>
                 </section>
             </div>
+
         </div>
     );
 }

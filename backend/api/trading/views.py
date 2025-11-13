@@ -1,11 +1,12 @@
 from django.db.models import OuterRef, Subquery
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PortfolioHolding, InstrumentIntervalData, Instrument
+from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote
 from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
-    BuySellSerializer, LatestInstrumentDataSerializer
+    BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
@@ -122,3 +123,30 @@ class SellInstrumentView(APIView):
 
         return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
 
+
+class InstrumentQuoteViewSet(viewsets.ViewSet):
+    """
+    ViewSet for instrument-related endpoints.
+    Includes a custom action for latest quote retrieval.
+    """
+
+    @action(detail=True, methods=['get'], url_path='quote')
+    def latest_quote(self, request, pk=None):
+
+        instrument = pk
+
+        quote = (
+            InstrumentQuote.objects
+            .filter(instrument__iexact=instrument)
+            .order_by("-timestamp")
+            .first()
+        )
+
+        if not quote:
+            return Response(
+                {"detail": "Quote not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = InstrumentQuoteSerializer(quote)
+        return Response(serializer.data)

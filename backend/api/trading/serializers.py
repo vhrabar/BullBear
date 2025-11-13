@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Instrument, InstrumentIntervalData, PortfolioHolding
+from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote
 
 
 class InstrumentSerializer(serializers.ModelSerializer):
@@ -37,3 +37,23 @@ class BuySellSerializer(serializers.Serializer):
     instrument_symbol = serializers.CharField(max_length=16)
     quantity = serializers.DecimalField(max_digits=20, decimal_places=4)
     price = serializers.DecimalField(max_digits=20, decimal_places=6, required=False)
+
+
+
+class InstrumentQuoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InstrumentQuote
+        fields = [
+            "instrument",
+            "bid_price",
+            "bid_size",
+            "ask_price",
+            "ask_size",
+            "last_price",
+            "currency",
+            "exchange",
+            "market_state",
+            "daily_change",
+            "daily_change_percent",
+            "timestamp",
+        ]

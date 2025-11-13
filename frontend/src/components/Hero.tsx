@@ -28,7 +28,7 @@ function Hero() {
             Testirajte strategije bez gubitka stvarnog kapitala uz pristup tržišnim podacima.
           </p>
           <div className="hero-buttons">
-            <Link to="/register" className="btn btn-primary">Započni trgovanje</Link>
+            <Link to="/positions" className="btn btn-primary">Započni s trgovanjem</Link>
             <a href="#features" className="btn btn-secondary">Saznaj više</a>
           </div>
         </div>

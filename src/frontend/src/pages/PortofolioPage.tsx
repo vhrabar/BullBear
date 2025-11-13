@@ -3,7 +3,6 @@ import StockView from "../components/StockView.tsx";
 
 function PortfolioPage() {
   const [balance, setBalance] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     async function fetchPortfolio() {
@@ -25,11 +24,9 @@ function PortfolioPage() {
 
         if (Array.isArray(data) && data.length > 0) {
           setBalance(data[0].balance);
-        } else {
-          setBalance("No portfolio found.");
         }
       } catch (err) {
-        setError(err.message);
+        console.log("error", err);
       }
     }
 
@@ -43,13 +40,13 @@ function PortfolioPage() {
         <div className="portfolio-inner">
           <div className="balance">
 
-            {!error && balance === null && (
+            {balance === null && (
               <div className="loading-message">
                 Loading balance...
               </div>
             )}
 
-            {!error && balance !== null && (
+            { balance !== null && (
               <div className="balance-value">
                 Balance: {balance}
               </div>

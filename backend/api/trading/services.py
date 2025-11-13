@@ -34,6 +34,7 @@ def buy_instrument(portfolio: Portfolio, instrument_symbol: str, quantity: Decim
     if portfolio.balance < total_purchase_cost:
         raise ValidationError("Insufficient balance in portfolio to complete purchase.")
     portfolio.balance -= total_purchase_cost
+    portfolio.save()
 
 
     # Weighted average price calculation

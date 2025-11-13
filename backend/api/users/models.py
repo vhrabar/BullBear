@@ -24,3 +24,26 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True)
+    avatar_url = models.URLField(blank=True)
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
+
+
+class UserPortfolio(models.Model):
+    """Represents one user's investment portfolio."""
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="portfolios")
+    name = models.CharField(max_length=64)
+    balance = models.DecimalField(decimal_places=2, default=10000, max_digits=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.user.user.username})"
+

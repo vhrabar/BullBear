@@ -1,0 +1,78 @@
+.trade-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.trade-modal {
+    background: #020617;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    width: 350px;
+    color: #f8fafc;
+    border: 1px solid #1f2937;
+}
+
+.trade-title {
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    text-align: center;
+}
+
+.market-note {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.trade-field {
+    margin-bottom: 1rem;
+}
+
+.trade-field label {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.trade-field input {
+    width: 100%;
+    padding: 0.45rem;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: white;
+}
+
+.trade-error {
+    color: #ef4444;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.trade-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.btn.cancel {
+    background: #475569;
+    color: white;
+}
+
+.btn.buy {
+    background: #16a34a;
+    color: white;
+}
+
+.btn.sell {
+    background: #ef4444;
+    color: white;
+}

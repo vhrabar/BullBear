@@ -41,6 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "django_extensions",
 
+    # Local apps
+    'api.main',
+    'api.users',
+    'api.trading',
+
     # Third-party apps
     'rest_framework',
     'rest_framework.authtoken',
@@ -54,18 +59,13 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.microsoft',
     'dj_rest_auth',
     'dj_rest_auth.registration',
-
-    # Local apps
-    'api.main',
-    'api.users',
-
 ]
 
 # AUTH
 
 AUTH_USER_MODEL = 'users.User'
 
-SITE_ID = 3
+SITE_ID = 5
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
@@ -140,12 +140,22 @@ WSGI_APPLICATION = 'core-api.wsgi.application'
 # DATABASE
 # -----------------------------------------------------------
 
+import os
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'defaultdb'),
+        'USER': os.getenv('DB_USER', 'doadmin'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', '25060'),
+        'OPTIONS': {
+            'sslmode': os.getenv('DB_SSLMODE', 'require'),
+        },
     }
 }
+
 
 
 # -----------------------------------------------------------
@@ -202,16 +212,24 @@ REST_FRAMEWORK = {
 # CORS (CROSS-ORIGIN RESOURCE SHARING) CONFIGURATION
 # -----------------------------------------------------------
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+
+
 
 # For development only (not recommended for production)
 CORS_ALLOW_ALL_ORIGINS = DEBUG

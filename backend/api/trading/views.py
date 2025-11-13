@@ -81,6 +81,10 @@ class InstrumentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = InstrumentSerializer
     permission_classes = [permissions.AllowAny]
 
+    lookup_field = "symbol"
+    lookup_value_regex = r"[A-Za-z0-9\.\-_]+"
+
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class BuyInstrumentView(APIView):

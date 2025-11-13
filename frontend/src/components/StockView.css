@@ -1,5 +1,5 @@
 #container {
-  min-height: 100vh;
+  min-height: 10vh;
   min-width: 100%;
   border-collapse: collapse;
 }
@@ -55,4 +55,19 @@
 
 .auth-logo:hover {
   opacity: 0.8;
+}
+
+#loading,
+#empty {
+  font-size: 2rem;
+  padding: 1.5rem;
+}
+
+.stock-item {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.stock-item:hover {
+  background-color: #d4d4d4;
 }

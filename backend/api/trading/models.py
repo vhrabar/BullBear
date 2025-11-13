@@ -1,5 +1,6 @@
 from django.db import models
 from api.users.models import UserProfile as Profile, UserPortfolio as Portfolio
+from rest_framework.utils import timezone
 
 
 class Instrument(models.Model):
@@ -123,3 +124,39 @@ class PortfolioHolding(models.Model):
         if latest_data:
             return (latest_data.close_price - self.average_price) * self.quantity
         return 0
+
+
+class InstrumentQuote(models.Model):
+    instrument = models.CharField(max_length=50, db_index=True)
+
+    bid_price = models.DecimalField(max_digits=12, decimal_places=6)
+    bid_size = models.IntegerField(default=0)
+
+    ask_price = models.DecimalField(max_digits=12, decimal_places=6)
+    ask_size = models.IntegerField(default=0)
+
+    last_price = models.DecimalField(max_digits=12, decimal_places=6)
+    currency = models.CharField(max_length=10, default="USD")
+
+    exchange = models.CharField(max_length=20, default="UNKNOWN")
+    market_state = models.CharField(
+        max_length=20,
+        default="unknown",
+        choices=[
+            ("open", "Open"),
+            ("closed", "Closed"),
+            ("pre-market", "Pre-Market"),
+            ("after-hours", "After Hours"),
+            ("unknown", "Unknown"),
+        ]
+    )
+
+    daily_change = models.DecimalField(max_digits=12, decimal_places=6, default=0)
+    daily_change_percent = models.DecimalField(max_digits=6, decimal_places=3, default=0)
+
+    timestamp = models.DateTimeField(auto_now=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.instrument} quote"

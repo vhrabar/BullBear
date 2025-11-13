@@ -116,7 +116,7 @@ MIDDLEWARE = [
 # URLS / WSGI
 # -----------------------------------------------------------
 
-ROOT_URLCONF = 'core-api.urls'
+ROOT_URLCONF = 'core_api.urls'
 
 TEMPLATES = [
     {
@@ -133,7 +133,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'core-api.wsgi.application'
+WSGI_APPLICATION = 'core_api.wsgi.application'
 
 
 # -----------------------------------------------------------
@@ -212,14 +212,20 @@ REST_FRAMEWORK = {
 # CORS (CROSS-ORIGIN RESOURCE SHARING) CONFIGURATION
 # -----------------------------------------------------------
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://bull-bear.app",
+    "https://admin.bull-bear.app",
+    "https://api.bull-bear.app",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://bull-bear.app",
+    "https://admin.bull-bear.app",
+    "https://api.bull-bear.app",
 ]
 
 

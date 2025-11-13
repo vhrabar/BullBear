@@ -35,3 +35,4 @@ tomlkit==0.13.3
 uml-class-diagram-generator==0.1
 urllib3==2.5.0
 yarg==0.1.10
+gunicorn

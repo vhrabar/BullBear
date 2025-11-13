@@ -1,3 +1,7 @@
+import { useState } from "react";
+import TradeDialog from "./TradeDialog";
+
+
 import "./StockPanel.css";
 
 interface Instrument {
@@ -36,7 +40,6 @@ interface StockPanelProps {
 
 
 function StockPanel({ stock, holding, latest }: StockPanelProps) {
-
     if (!stock) {
         return (
             <div className="stock-panel empty">
@@ -49,6 +52,8 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
 
     const ticker = stock.symbol;
     const company = stock.name;
+    const [tradeType, setTradeType] = useState<"buy" | "sell" | null>(null);
+
 
 
     return (
@@ -72,10 +77,11 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
                     )}
                 </div>
 
-                <div className="stock-actions">
-                    <button className="btn buy">Buy</button>
-                    <button className="btn sell">Sell</button>
-                </div>
+               <div className="stock-actions">
+                <button className="btn buy" onClick={() => setTradeType("buy")}>Buy</button>
+                <button className="btn sell" onClick={() => setTradeType("sell")}>Sell</button>
+            </div>
+
             </div>
 
             <div className="stock-panel-main">
@@ -179,7 +185,22 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
                 </section>
             </div>
 
+            {tradeType && latest && (
+            <TradeDialog
+                type={tradeType}
+                symbol={ticker}
+                price={Number(latest.last_price || latest.ask_price || latest.close_price)}
+                onClose={() => setTradeType(null)}
+                onSuccess={() => {
+                    console.log("Trade completed successfully.");
+                }}
+            />
+        )}
+
         </div>
+
+
+
     );
 }
 

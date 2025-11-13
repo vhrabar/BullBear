@@ -36,6 +36,9 @@ urlpatterns = [
     # Trading
     path('api/trading/', include('api.trading.urls')),
 
+    # Users
+    path('api/users/', include('api.users.urls')),
+
     # DJ-Rest-Auth
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),

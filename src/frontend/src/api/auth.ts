@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://api.bull-bear.app";
 
 export interface GoogleAuthResponse {
   access: string;    // JWT Access token

@@ -18,7 +18,6 @@ git-big-picture==1.3.0
 graphviz==0.21
 idna==3.11
 isort==7.0.0
-jwt==1.4.0
 mccabe==0.7.0
 pipreqs==0.4.13
 platformdirs==4.5.0
@@ -36,3 +35,4 @@ uml-class-diagram-generator==0.1
 urllib3==2.5.0
 yarg==0.1.10
 gunicorn
+PyJWT>=2.8.0

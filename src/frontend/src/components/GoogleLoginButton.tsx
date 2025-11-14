@@ -2,7 +2,7 @@ import React from "react";
 
 const GoogleOAuthButton: React.FC = () => {
   const handleLogin = () => {
-    window.location.href = "https://bull-bear.app/auth/google/login/?process=login";
+    window.location.href = "https://api.bull-bear.app/auth/google/login";
     };
 
 

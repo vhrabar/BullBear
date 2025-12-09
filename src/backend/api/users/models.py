@@ -2,16 +2,21 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.text import slugify
+import random
+import string
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True)
+    email = models.EmailField()
     username = models.CharField(unique=True, max_length=150)
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = []
 
     def save(self, *args, **kwargs):
-        if not self.username and self.email:
+        if not self.email:
+            self.email = ''.join(random.choices(string.ascii_lowercase, k=10)) + '@example.com'
+            
+        if not self.username:
             local_part = self.email.split('@')[0]
             base_username = slugify(local_part)
             username_candidate = base_username

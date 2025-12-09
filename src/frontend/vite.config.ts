@@ -7,11 +7,12 @@ export default defineConfig({
     cors: true,
     proxy : {
       '/api' : {
-        target : 'api.bull-bear.app',
+        target : 'https://api.bull-bear.app',
         changeOrigin : true,
-        secure : false
+        secure : true
       }
     }
+
   }
 
 })

@@ -39,7 +39,7 @@ jobs:
           ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << 'EOF'
           cd /root/bullbear/src/backend
 
-cat > .env << 'EOT'
+          cat > .env << 'EOT'
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}

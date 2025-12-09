@@ -36,27 +36,25 @@ jobs:
           DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
           PRODUCTION: ${{ secrets.PRODUCTION }}
         run: |
-          ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << 'EOF'
-          cd /root/bullbear/src/backend
+          ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << EOF
+cd /root/bullbear/src/backend
 
-          cat > .env << 'EOT'
+cat > .env << EOT
 DB_NAME=${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASSWORD}
 DB_HOST=${DB_HOST}
 DB_PORT=${DB_PORT}
 DB_SSLMODE=${DB_SSLMODE}
-
 PRODUCTION=${PRODUCTION}
 EOT
-
-          EOF
+EOF
 
       - name: Rebuild and restart Docker
         run: |
-          ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << 'EOF'
-          cd /root/bullbear
-          docker compose down
-          docker compose build --no-cache
-          docker compose up -d
-          EOF
+          ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << EOF
+cd /root/bullbear
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+EOF

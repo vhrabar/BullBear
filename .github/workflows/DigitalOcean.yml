@@ -38,7 +38,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << EOF
           cd /root/bullbear/src/backend
-          echo -e "DB_NAME=${DB_NAME}\nDB_USER=${DB_USER}\nDB_PASSWORD=${DB_PASSWORD}\nDB_HOST=${DB_HOST}\nDB_PORT=${DB_PORT}\nDB_SSLMODE=${DB_SSLMODE}\nPRODUCTION=${PRODUCTION}" > .env
+          echo -e "DB_NAME=${DB_NAME}\nDB_USER=${DB_USER}\nDB_PASSWORD=${DB_PASSWORD}\nDB_HOST${DB_HOST}\nDB_PORT=${DB_PORT}\nDB_SSLMODE=${DB_SSLMODE}\nPRODUCTION=${PRODUCTION}" > .env
 
 
       - name: Rebuild and restart Docker

@@ -3,3 +3,4 @@
 src/frontend/node_modules
 /src/backend/.env
 /src/frontend/.env
+/src/scheduler/.env

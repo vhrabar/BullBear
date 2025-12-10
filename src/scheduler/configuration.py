@@ -14,4 +14,4 @@ class Settings:
     DB_PASSWORD: str = os.getenv("DB_PASSWORD")
     DB_PORT: str = os.getenv("DB_PORT")
 
-    DB_url = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DATABASE_HOST}:{DB_PORT}/{DB_NAME}"
+    DB_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DATABASE_HOST}:{DB_PORT}/{DB_NAME}"

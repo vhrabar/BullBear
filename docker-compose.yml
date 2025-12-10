@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  ingestion:
+    container_name: scheduler
+    build:
+      context: ./src/scheduler
+      dockerfile: scheduler.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/scheduler/.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   backend:
     build:
@@ -11,6 +24,11 @@ services:
       - "8000"
     env_file:
       - ./src/backend/.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "12h"
+        max-file: "5"
 
   frontend:
     build:

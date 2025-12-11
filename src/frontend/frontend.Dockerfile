@@ -2,12 +2,14 @@ FROM node:20 AS build
 
 WORKDIR /app
 
+# Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
+# Copy source
 COPY . .
+
+# Build frontend
 RUN npm run build
 
-
-FROM nginx:1.25
-COPY --from=build /app/dist /usr/share/nginx/html
+RUN mkdir -p /host_dist

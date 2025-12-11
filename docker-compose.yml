@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  scheduler:
+    container_name: scheduler
+    build:
+      context: ./src/scheduler
+      dockerfile: scheduler.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./src/scheduler/.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   backend:
     build:
@@ -11,11 +24,19 @@ services:
       - "8000"
     env_file:
       - ./src/backend/.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "12h"
+        max-file: "5"
 
   frontend:
     build:
       context: ./src/frontend
       dockerfile: frontend.Dockerfile
+    volumes:
+      - ./src/frontend/dist:/host_dist
+    command: sh -c "cp -r /app/dist/* /host_dist/"
     container_name: frontend
     expose:
       - "80"
@@ -28,12 +49,16 @@ services:
       - "443:443"
 
     volumes:
-      - ./src/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./src/frontend/dist:/usr/share/nginx/html:ro
+      - ./src/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./src/frontend/dist:/usr/share/nginx/html
       - /etc/letsencrypt:/etc/letsencrypt:ro
+
     depends_on:
       - backend
       - frontend
+
+
+
 
 networks:
   default:

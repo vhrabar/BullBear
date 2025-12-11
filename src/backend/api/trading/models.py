@@ -127,7 +127,7 @@ class PortfolioHolding(models.Model):
 
 
 class InstrumentQuote(models.Model):
-    instrument = models.CharField(max_length=50, db_index=True, unique=True)
+    instrument = models.CharField(max_length=50, db_index=True)
 
     bid_price = models.DecimalField(max_digits=12, decimal_places=6)
     bid_size = models.IntegerField(default=0)

@@ -10,7 +10,6 @@ class Settings:
     Configuration settings for the scheduler service.
     """
     load_dotenv()
-    WEBSOCKET_URL: str = os.getenv("MASSIVE_WS_URL")
     MASSIVE_API_KEY: str = os.getenv("MASSIVE_API_KEY")
     DB_HOST: str = os.getenv("DB_HOST")
     DB_NAME: str = os.getenv("DB_NAME")

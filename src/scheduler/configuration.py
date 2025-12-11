@@ -1,17 +1,30 @@
 from dataclasses import dataclass
 import os
 
+from dotenv import load_dotenv
+
 
 @dataclass
 class Settings:
     """
     Configuration settings for the scheduler service.
     """
+    load_dotenv()
     WEBSOCKET_URL: str = os.getenv("MASSIVE_WS_URL")
-    DATABASE_HOST: str = os.getenv("DB_HOST")
+    MASSIVE_API_KEY: str = os.getenv("MASSIVE_API_KEY")
+    DB_HOST: str = os.getenv("DB_HOST")
     DB_NAME: str = os.getenv("DB_NAME")
     DB_USER: str = os.getenv("DB_USER")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD")
     DB_PORT: str = os.getenv("DB_PORT")
 
-    DB_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DATABASE_HOST}:{DB_PORT}/{DB_NAME}"
+    TEST_MODE: bool = os.getenv("TESTING", "false").lower() == "true"
+
+    def __post_init__(self):
+        self.DB_URL = (
+            f"postgresql+psycopg2://{self.DB_USER}:"
+            f"{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
+
+
+settings = Settings()

@@ -27,7 +27,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "12h"
+        max-size: "10m"
         max-file: "5"
 
   frontend:

@@ -1,8 +1,9 @@
 import React from "react";
+import {GOOGLE_OAUTH_URL} from "../config.ts";
 
 const GoogleOAuthButton: React.FC = () => {
   const handleLogin = () => {
-    window.location.href = "https://api.bull-bear.app/auth/google/login";
+      window.location.href = GOOGLE_OAUTH_URL;
     };
 
 

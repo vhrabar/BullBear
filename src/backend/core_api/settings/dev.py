@@ -1,6 +1,7 @@
 from .base import *
 
 DEBUG = True
+SITE_ID = 5
 
 ALLOWED_HOSTS = ["*"]
 
@@ -14,5 +15,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "http://localhost:5173/explore"
+LOGOUT_REDIRECT_URL = "http://localhost:5173"
+
+
+print("Development settings loaded.")

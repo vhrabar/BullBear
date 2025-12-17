@@ -2,6 +2,8 @@ from .base import *
 
 DEBUG = False
 
+SITE_ID = 2
+
 ALLOWED_HOSTS = [
     "bull-bear.app",
     "admin.bull-bear.app",
@@ -20,7 +22,7 @@ CSRF_TRUSTED_ORIGINS = [
     "https://admin.bull-bear.app",
 ]
 
-LOGIN_REDIRECT_URL = "https://bull-bear.app"
+LOGIN_REDIRECT_URL = "https://bull-bear.app/explore"
 LOGOUT_REDIRECT_URL = "https://bull-bear.app"
 
 
@@ -51,3 +53,5 @@ LOGGING = {
         'level': 'ERROR',
     },
 }
+
+print("Production settings loaded.")

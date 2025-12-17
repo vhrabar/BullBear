@@ -1,11 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserPortfolioViewSet, UserProfileViewSet, ResetUserPortfolioViewSet
+from .views import UserPortfolioViewSet, UserProfileViewSet, UserViewSet
 
 router = DefaultRouter()
-router.register(r'portofolio-details', UserPortfolioViewSet, basename='portfolio-details')
+router.register(r'user-portfolio', UserPortfolioViewSet, basename='portfolio-details')
 router.register(r'user-profile', UserProfileViewSet, basename='user-profile')
-router.register(r'reset-portfolio', ResetUserPortfolioViewSet, basename='reset-portfolio')
+router.register(r'user-user', UserViewSet, basename='user')
 
 urlpatterns = [
     path('', include(router.urls)),

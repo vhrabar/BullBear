@@ -1,0 +1,95 @@
+.docs-container {
+  display: flex;
+  height: 100vh;
+  background: #020617;
+  color: #f9fafb;
+  font-family: system-ui, sans-serif;
+}
+
+.docs-sidebar {
+  width: 220px;
+  background: #0b0f1e;
+  border-right: 1px solid #1f2937;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+
+.docs-sidebar a {
+  text-decoration: none;
+  color: #f9fafb;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  display: block;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.docs-sidebar a:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.docs-sidebar a.active {
+  background: #1d4ed8;
+  color: white;
+  font-weight: 600;
+}
+
+.docs-main {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.docs-panel {
+  background: #020617;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #1f2937;
+}
+
+.docs-panel h1,
+.docs-panel h2,
+.docs-panel h3 {
+  color: #f9fafb;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.docs-panel p,
+.docs-panel li {
+  color: #d1d5db;
+  line-height: 1.5;
+}
+
+.docs-panel pre {
+  background: rgba(15, 23, 42, 0.7);
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.docs-panel code {
+  background: rgba(31, 41, 55, 0.7);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.35rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.docs-panel ul {
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+
+.docs-panel ol {
+  padding-left: 1.25rem;
+  list-style-type: decimal;
+}

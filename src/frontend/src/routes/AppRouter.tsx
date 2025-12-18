@@ -7,6 +7,7 @@ import Layout from "../components/Layout.tsx";
 import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
 import Licence  from "../pages/Licence.tsx";
+import DocsLayout from "../pages/Docs.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 
@@ -18,6 +19,8 @@ const AppRouter: React.FC = () => {
 
                 <Route path="/" element={<Home/>}/>
                 <Route path="/licence" element={<Licence />}/>
+                <Route path="/docs/:page" element={<DocsLayout />} />
+                <Route path="/docs" element={<DocsLayout />} />
 
                 <Route path="/login" element={<Login/>}/>
 

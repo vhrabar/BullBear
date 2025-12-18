@@ -35,7 +35,7 @@ function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; {currentYear} BullBear. Sva prava pridržana.</p>
+          <p>&copy; © {currentYear} © BullBear. Licencirano pod GNU GPL v2.</p>
           <p>Razvojni projekt - FER, Programsko inženjerstvo</p>
         </div>
       </div>

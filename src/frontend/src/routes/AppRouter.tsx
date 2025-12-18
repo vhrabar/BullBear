@@ -13,6 +13,7 @@ import ProtectedRoute from "../auth/AuthProtection.tsx";
 import About from "../components/About.tsx";
 import Features from "../components/Features.tsx";
 import Footer from "../components/Footer.tsx";
+import PageNotFound from "../pages/PageNotFound.tsx";
 
 
 const AppRouter: React.FC = () => {
@@ -63,6 +64,7 @@ const AppRouter: React.FC = () => {
                     }
                 />
 
+                <Route path="*" element={<PageNotFound />} />
             </Routes>
         </Router>
     );

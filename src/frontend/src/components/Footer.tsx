@@ -8,10 +8,13 @@ function Footer() {
       <div className="footer-container">
         <div className="footer-content">
           <div className="footer-brand">
-            <div className="footer-logo">
-              <span className="logo-icon">📈</span>
-              <span className="logo-text">BullBear</span>
-            </div>
+              <a href="/">
+                  <div className="footer-logo">
+                  <span className="logo-icon">📈</span>
+                  <span className="logo-text">BullBear</span>
+                </div>
+              </a>
+
             <p className="footer-description">
               Simulacija trgovanja dionicama i ETF-ovima
             </p>
@@ -20,8 +23,8 @@ function Footer() {
           <div className="footer-links">
             <div className="footer-section">
               <h4>Navigacija</h4>
-              <a href="#features">Značajke</a>
-              <a href="#about">O projektu</a>
+              <a href="/features">Značajke</a>
+              <a href="/about">O projektu</a>
             </div>
 
             <div className="footer-section">
@@ -29,7 +32,7 @@ function Footer() {
               <a href="https://www.fer.unizg.hr" target="_blank" rel="noopener noreferrer">
                 FER, UNIZG
               </a>
-              <a href="#">Dokumentacija</a>
+              <a href="/docs/Home">Dokumentacija</a>
             </div>
           </div>
         </div>

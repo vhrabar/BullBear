@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 // @ts-ignore
 import "./Docs.css";
+import Footer from "../components/Footer.tsx";
 
 const markdownPages = [
     "Home",
@@ -40,27 +41,29 @@ const DocsLayout: React.FC = () => {
   }, [currentPage]);
 
     return (
-    <div className="docs-container">
-      <aside className="docs-sidebar">
-        {markdownPages.map((p) => (
-          <Link
-            key={p}
-            to={`/docs/${p}`}
-            className={location.pathname === `/docs/${p}` ? "active" : ""}
-          >
-            {p.replaceAll("-", " ")}
-          </Link>
-        ))}
-      </aside>
+        <>
+            <div className="docs-container">
+                <aside className="docs-sidebar">
+                    {markdownPages.map((p) => (
+                        <Link
+                            key={p}
+                            to={`/docs/${p}`}
+                            className={location.pathname === `/docs/${p}` ? "active" : ""}
+                        >
+                            {p.replaceAll("-", " ")}
+                        </Link>
+                    ))}
+                </aside>
 
-      <main className="docs-main">
-        <div className="docs-panel">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-            {markdown}
-          </ReactMarkdown>
-        </div>
-      </main>
-    </div>
+                <main className="docs-main">
+                    <div className="docs-panel">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                            {markdown}
+                        </ReactMarkdown>
+                    </div>
+                </main>
+            </div>
+            <Footer/></>
   );
 };
 

@@ -10,6 +10,9 @@ import Licence  from "../pages/Licence.tsx";
 import DocsLayout from "../pages/Docs.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
+import About from "../components/About.tsx";
+import Features from "../components/Features.tsx";
+import Footer from "../components/Footer.tsx";
 
 
 const AppRouter: React.FC = () => {
@@ -21,7 +24,8 @@ const AppRouter: React.FC = () => {
                 <Route path="/licence" element={<Licence />}/>
                 <Route path="/docs/:page" element={<DocsLayout />} />
                 <Route path="/docs" element={<DocsLayout />} />
-
+                <Route path="/features" element={<><Features/><Footer/></>} />
+                <Route path="/about" element={<><About/><Footer/></>} />
                 <Route path="/login" element={<Login/>}/>
 
                 <Route

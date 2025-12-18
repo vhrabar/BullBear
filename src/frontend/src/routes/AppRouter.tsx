@@ -19,12 +19,14 @@ const AppRouter: React.FC = () => {
     return (
         <Router>
             <Routes>
-
                 <Route path="/" element={<Home/>}/>
                 <Route path="/licence" element={<Licence />}/>
                 <Route path="/docs/:page" element={<DocsLayout />} />
                 <Route path="/docs" element={<DocsLayout />} />
                 <Route path="/features" element={<><Features/><Footer/></>} />
+                {/*<Route path="/pricing" element={<Pricing />} />*/}
+                {/*<Route path="/pricing" element={<FAQ />} />*/}
+                {/*<Route path="/pricing" element={<Contact />} />*/}
                 <Route path="/about" element={<><About/><Footer/></>} />
                 <Route path="/login" element={<Login/>}/>
 

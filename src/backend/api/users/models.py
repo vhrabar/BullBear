@@ -1,9 +1,21 @@
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.text import slugify
+from django.utils import timezone
 import random
 import string
+
+class UserQuerySet(models.QuerySet):
+    def paid(self):
+        now = timezone.now()
+        return self.filter(
+            usersubscription__is_active=True,
+            usersubscription__end_date__gte=now,
+            usersubscription__package__is_active=True
+        ).distinct()
+
+    def regular(self):
+        return self.exclude(id__in=self.paid())
 
 class User(AbstractUser):
     email = models.EmailField()
@@ -11,6 +23,8 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
+
+    objects = UserQuerySet.as_manager()
 
     def save(self, *args, **kwargs):
         if not self.email:
@@ -29,6 +43,15 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def is_paid_user(self):
+        now = timezone.now()
+        return self.usersubscription_set.filter(
+            is_active=True,
+            end_date__gte=now,
+            package__is_active=True
+        ).exists()
 
 
 class UserProfile(models.Model):

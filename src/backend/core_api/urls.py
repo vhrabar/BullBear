@@ -39,6 +39,9 @@ urlpatterns = [
     # Users
     path('api/users/', include('api.users.urls')),
 
+    # Payment
+    path('api/payment/', include('api.payment.urls')),
+
     # DJ-Rest-Auth
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),

@@ -33,6 +33,7 @@ class Payment(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     provider = models.CharField(max_length=20, choices=PROVIDERS)
+    subscription_type = models.ForeignKey(SubscriptionType, on_delete=models.SET_NULL, null=True)
     provider_payment_id = models.CharField(max_length=255, unique=True)
     package = models.ForeignKey(UserSubscriptionPackage, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)

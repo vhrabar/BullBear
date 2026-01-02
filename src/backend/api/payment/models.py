@@ -23,3 +23,18 @@ class UserSubscription(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+
+
+class Payment(models.Model):
+    PROVIDERS = (
+        ("stripe", "Stripe"),
+        ("paypal", "PayPal"),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    provider = models.CharField(max_length=20, choices=PROVIDERS)
+    provider_payment_id = models.CharField(max_length=255, unique=True)
+    package = models.ForeignKey(UserSubscriptionPackage, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)

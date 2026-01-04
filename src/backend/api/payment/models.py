@@ -1,9 +1,6 @@
 from django.conf import settings
 from django.db import models
 
-User = settings.AUTH_USER_MODEL
-
-
 class SubscriptionType(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -18,7 +15,7 @@ class UserSubscriptionPackage(models.Model):
 
 
 class UserSubscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     package = models.ForeignKey(UserSubscriptionPackage, on_delete=models.CASCADE)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()

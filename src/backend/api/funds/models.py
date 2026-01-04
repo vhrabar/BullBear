@@ -10,7 +10,7 @@ class Fund(models.Model):
     Creator-managed fund inside a user's portfolio.
     """
     creator_portfolio = models.ForeignKey(
-        "UserPortfolio",
+        "users.UserPortfolio",
         on_delete=models.CASCADE,
         related_name="created_funds",
         help_text="Portfolio of the creator who manages this fund."
@@ -25,7 +25,7 @@ class Fund(models.Model):
     nav_per_unit = models.DecimalField(max_digits=20, decimal_places=6, default=1)
 
     instruments = models.ManyToManyField(
-        "Instrument",
+        "trading.Instrument",
         through="FundHolding",
         related_name="funds"
     )
@@ -54,7 +54,7 @@ class FundHolding(models.Model):
         related_name="holdings",
     )
     instrument = models.ForeignKey(
-        "Instrument",
+        "trading.Instrument",
         on_delete=models.CASCADE,
         related_name="fund_holdings",
     )
@@ -84,7 +84,7 @@ class FundSubscription(models.Model):
     A user subscribes to a fund.
     """
     subscriber_portfolio = models.ForeignKey(
-        "UserPortfolio",
+        "users.UserPortfolio",
         on_delete=models.CASCADE,
         related_name="fund_subscriptions",
         help_text="Portfolio that holds this subscription."

@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, CompanyNews, Company
+from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, CompanyNews, Company, \
+    EarningsReport, Dividend
 
 
 @admin.register(Instrument)
@@ -85,4 +86,22 @@ class CompanyNewsAdmin(admin.ModelAdmin):
     def get_companies(self, obj):
         return ", ".join([c.name for c in obj.companies.all()])
     get_companies.short_description = "Companies"
+
+
+@admin.register(EarningsReport)
+class EarningsReportAdmin(admin.ModelAdmin):
+    list_display = ("company", "fiscal_quarter", "fiscal_year", "report_date", "estimate_eps", "actual_eps")
+    list_filter = ("company", "fiscal_quarter", "fiscal_year")
+    search_fields = ("company__name", "company__ticker")
+    ordering = ("report_date",)
+    date_hierarchy = "report_date"
+
+
+@admin.register(Dividend)
+class DividendAdmin(admin.ModelAdmin):
+    list_display = ("company", "ex_date", "payment_date", "dividend_amount", "currency")
+    list_filter = ("company",)
+    search_fields = ("company__name", "company__ticker")
+    ordering = ("ex_date",)
+    date_hierarchy = "ex_date"
 

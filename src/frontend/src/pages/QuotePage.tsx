@@ -45,12 +45,34 @@ interface NewsItem {
   url?: string;
 }
 
+interface EarningsReport {
+  id: number;
+  company: string;
+  report_date: string;
+  fiscal_quarter: string;
+  fiscal_year: number;
+  estimate_eps: string | null;
+  actual_eps: string | null;
+}
+
+interface Dividend {
+  id: number;
+  company: string;
+  ex_date: string;
+  payment_date: string;
+  dividend_amount: string;
+  currency: string;
+}
+
+
 function QuotePage() {
   const { symbol } = useParams();
   const [holding, setHolding] = useState<Holding | null>(null);
   const [latestQuote, setLatestQuote] = useState<LatestQuote | null>(null);
   const [candle, setCandle] = useState<Candle | null>(null);
-  const [news, setNews] = useState<NewsItem[]>([]); // <-- added
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [earnings, setEarnings] = useState<EarningsReport[]>([]);
+  const [dividends, setDividends] = useState<Dividend[]>([]);
 
   // Fetch holding if in portfolio
   useEffect(() => {
@@ -105,6 +127,26 @@ function QuotePage() {
     .catch(() => setNews([]));
 }, [symbol]);
 
+  useEffect(() => {
+  if (!symbol) return;
+
+  // Earnings
+  fetch(`/api/trading/earnings-reports/?company__ticker=${symbol}&ordering=report_date`, {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => setEarnings(data || []))
+    .catch(() => setEarnings([]));
+
+  // Dividends
+  fetch(`/api/trading/dividends/?company__ticker=${symbol}&ordering=ex_date`, {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => setDividends(data || []))
+    .catch(() => setDividends([]));
+}, [symbol]);
+
   // Build the instrument info for StockPanel
   const stock =
     symbol
@@ -131,6 +173,8 @@ function QuotePage() {
           close_price: candle?.close_price,
         }}
         news={news}
+         earnings={earnings}
+        dividends={dividends}
       />
     </div>
   );

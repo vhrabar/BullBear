@@ -36,6 +36,8 @@ interface StockPanelProps {
   stock: Instrument | null;
   holding?: Holding | null;
   latest?: LatestData | null;
+  earnings?: EarningsReport[];
+  dividends?: Dividend[];
 }
 
 interface NewsItem {
@@ -54,7 +56,7 @@ interface StockPanelProps {
 }
 
 
-function StockPanel({ stock, holding, latest, news }: StockPanelProps) {
+function StockPanel({ stock, holding, latest, news, earnings, dividends }: StockPanelProps) {
     if (!stock) {
         return (
             <div className="stock-panel empty">
@@ -192,13 +194,24 @@ function StockPanel({ stock, holding, latest, news }: StockPanelProps) {
                       </ul>
                     </section>
 
-
-                    <section className="panel-section">
-                        <h3>Upcoming Events</h3>
-                        <ul className="simple-list">
-                            <li>Earnings – placeholder date</li>
-                            <li>Options expiry – placeholder</li>
-                        </ul>
+                   <section className="panel-section">
+                      <h3>Upcoming Earnings</h3>
+                      <ul className="simple-list">
+                        {earnings && earnings.length > 0 ? (
+                          earnings.map((item) => (
+                            <li key={item.id}>
+                              {item.fiscal_quarter} {item.fiscal_year} –{" "}
+                              {new Date(item.report_date).toLocaleDateString()} |
+                              Estimate EPS: {item.estimate_eps ?? "—"}{" "}
+                              {item.actual_eps !== null && (
+                                <span style={{ color: "#34d399" }}>| Actual EPS: {item.actual_eps}</span>
+                              )}
+                            </li>
+                          ))
+                        ) : (
+                          <li>No earnings scheduled</li>
+                        )}
+                      </ul>
                     </section>
                 </div>
             </div>
@@ -212,10 +225,20 @@ function StockPanel({ stock, holding, latest, news }: StockPanelProps) {
                 </section>
 
                 <section className="panel-section">
-                    <h3>Dividends</h3>
-                    <div className="history-placeholder">
-                        Dividend data placeholder.
-                    </div>
+                  <h3>Upcoming Dividends</h3>
+                  <ul className="simple-list">
+                    {dividends && dividends.length > 0 ? (
+                      dividends.map((item) => (
+                        <li key={item.id}>
+                          Ex-Date: {new Date(item.ex_date).toLocaleDateString()} | Amount:{" "}
+                          {item.dividend_amount} {item.currency} | Payment Date:{" "}
+                          {new Date(item.payment_date).toLocaleDateString()}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No dividends scheduled</li>
+                    )}
+                  </ul>
                 </section>
             </div>
 
@@ -232,9 +255,6 @@ function StockPanel({ stock, holding, latest, news }: StockPanelProps) {
         )}
 
         </div>
-
-
-
     );
 }
 

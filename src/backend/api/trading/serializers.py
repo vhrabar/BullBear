@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote
+from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, Company, CompanyNews
 
 
 class InstrumentSerializer(serializers.ModelSerializer):
@@ -57,3 +57,19 @@ class InstrumentQuoteSerializer(serializers.ModelSerializer):
             "daily_change_percent",
             "timestamp",
         ]
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ['id', 'name', 'ticker', 'sector', 'industry', 'description', 'website', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class CompanyNewsSerializer(serializers.ModelSerializer):
+    companies = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), many=True)
+
+    class Meta:
+        model = CompanyNews
+        fields = ['id', 'companies', 'headline', 'content', 'published_at', 'source', 'url', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']

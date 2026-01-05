@@ -1,16 +1,28 @@
 from django.db.models import OuterRef, Subquery
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote
+from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote, Company, CompanyNews
 from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
-    BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer
+    BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer, CompanySerializer, \
+    CompanyNewsSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+
+
+class IsAdminOrReadOnly(BasePermission):
+    """
+    Custom permission: only admin users can modify, everyone else can read.
+    """
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        return request.user and request.user.is_staff
 
 
 class PortfolioHoldingViewSet(viewsets.ModelViewSet):
@@ -154,3 +166,16 @@ class InstrumentQuoteViewSet(viewsets.ViewSet):
 
         serializer = InstrumentQuoteSerializer(quote)
         return Response(serializer.data)
+
+
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = Company.objects.all().order_by('name')
+    serializer_class = CompanySerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+class CompanyNewsViewSet(viewsets.ModelViewSet):
+    queryset = CompanyNews.objects.all().order_by('-published_at')
+    serializer_class = CompanyNewsSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    

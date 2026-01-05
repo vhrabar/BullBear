@@ -4,8 +4,8 @@ from .models import Instrument, InstrumentIntervalData, PortfolioHolding, Instru
 
 @admin.register(Instrument)
 class InstrumentAdmin(admin.ModelAdmin):
-    list_display = ('symbol', 'name', 'type', 'exchange', 'is_active')
-    search_fields = ('symbol', 'name')
+    list_display = ('symbol', 'name', 'type', 'exchange', 'is_active', 'company')
+    search_fields = ('symbol', 'name', 'company')
 
 @admin.register(InstrumentIntervalData)
 class InstrumentIntervalDataAdmin(admin.ModelAdmin):

@@ -3,6 +3,52 @@ from api.users.models import UserProfile as Profile, UserPortfolio as Portfolio
 from rest_framework.utils import timezone
 
 
+class Company(models.Model):
+    """
+    Represents a company.
+    """
+    name = models.CharField(max_length=128, unique=True)
+    ticker = models.CharField(max_length=16, blank=True, null=True)
+    sector = models.CharField(max_length=64, blank=True, null=True)
+    industry = models.CharField(max_length=64, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
+class CompanyNews(models.Model):
+    """
+    Represents a news item related to a company.
+    """
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="news"
+    )
+    headline = models.CharField(max_length=256)
+    content = models.TextField()
+    published_at = models.DateTimeField(db_index=True)
+    source = models.CharField(max_length=128, blank=True)
+    url = models.URLField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-published_at"]
+        indexes = [
+            models.Index(fields=["company", "published_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.company.name}: {self.headline[:50]}..."
+
+
 class Instrument(models.Model):
     """
     Represents a financial instrument such as a stock or ETF.
@@ -15,6 +61,9 @@ class Instrument(models.Model):
         max_length=16,
         unique=True,
     )
+
+    company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True, related_name="instruments")
+
     name = models.CharField(
         max_length=128,
     )

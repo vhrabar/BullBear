@@ -38,13 +38,21 @@ interface Candle {
   updated_at: string;
 }
 
+interface NewsItem {
+  id: number;
+  headline: string;
+  published_at: string;
+  url?: string;
+}
+
 function QuotePage() {
   const { symbol } = useParams();
   const [holding, setHolding] = useState<Holding | null>(null);
   const [latestQuote, setLatestQuote] = useState<LatestQuote | null>(null);
   const [candle, setCandle] = useState<Candle | null>(null);
+  const [news, setNews] = useState<NewsItem[]>([]); // <-- added
 
-  // Fetch holding .> if in port
+  // Fetch holding if in portfolio
   useEffect(() => {
     if (!symbol) return;
 
@@ -85,12 +93,23 @@ function QuotePage() {
       .catch(() => setCandle(null));
   }, [symbol]);
 
+  // Fetch latest company news (latest 3)
+  useEffect(() => {
+  if (!symbol) return;
+
+  fetch(`/api/trading/news/?company__ticker=${symbol}&ordering=-published_at&limit=3`, {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => setNews(data || [])) // <-- use data directly, not data.results
+    .catch(() => setNews([]));
+}, [symbol]);
+
   // Build the instrument info for StockPanel
   const stock =
     symbol
       ? {
           symbol: symbol.toUpperCase(),
-
           name:
             holding?.instrument
               ?.split("(")[1]
@@ -111,6 +130,7 @@ function QuotePage() {
           low_price: candle?.low_price,
           close_price: candle?.close_price,
         }}
+        news={news}
       />
     </div>
   );

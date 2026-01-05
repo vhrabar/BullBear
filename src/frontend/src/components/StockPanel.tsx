@@ -38,8 +38,23 @@ interface StockPanelProps {
   latest?: LatestData | null;
 }
 
+interface NewsItem {
+  id: number;
+  headline: string;
+   content?: string;
+  published_at: string;
+  url?: string;
+}
 
-function StockPanel({ stock, holding, latest }: StockPanelProps) {
+interface StockPanelProps {
+  stock: Instrument | null;
+  holding?: Holding | null;
+  latest?: LatestData | null;
+  news?: NewsItem[];
+}
+
+
+function StockPanel({ stock, holding, latest, news }: StockPanelProps) {
     if (!stock) {
         return (
             <div className="stock-panel empty">
@@ -151,13 +166,32 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
 
                 <div className="stock-main-right">
                     <section className="panel-section">
-                        <h3>Hot News</h3>
-                        <ul className="simple-list">
-                            <li>News 1 about {ticker} (placeholder)</li>
-                            <li>News 2 about {ticker} (placeholder)</li>
-                            <li>News 3 about {ticker} (placeholder)</li>
-                        </ul>
+                      <h3>Hot News</h3>
+                      <ul className="simple-list">
+                        {news && news.length > 0 ? (
+                          news.slice(0, 3).map((item) => (
+                            <li key={item.id}>
+                              {item.url ? (
+                                <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                  {item.headline}
+                                </a>
+                              ) : (
+                                <span>{item.headline}</span>
+                              )}
+                              <small>({new Date(item.published_at).toLocaleDateString()})</small>
+                              {item.content && (
+                                <p className="news-content">
+                                  {item.content}
+                                </p>
+                              )}
+                            </li>
+                          ))
+                        ) : (
+                          <li>No news available</li>
+                        )}
+                      </ul>
                     </section>
+
 
                     <section className="panel-section">
                         <h3>Upcoming Events</h3>

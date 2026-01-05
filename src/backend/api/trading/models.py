@@ -22,31 +22,27 @@ class Company(models.Model):
 
 
 class CompanyNews(models.Model):
-    """
-    Represents a news item related to a company.
-    """
-    company = models.ForeignKey(
+    companies = models.ManyToManyField(
         Company,
-        on_delete=models.CASCADE,
-        related_name="news"
+        related_name='news'
     )
     headline = models.CharField(max_length=256)
     content = models.TextField()
     published_at = models.DateTimeField(db_index=True)
     source = models.CharField(max_length=128, blank=True)
     url = models.URLField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-published_at"]
         indexes = [
-            models.Index(fields=["company", "published_at"]),
+            models.Index(fields=["published_at"]),
         ]
 
     def __str__(self):
-        return f"{self.company.name}: {self.headline[:50]}..."
+        return f"{self.headline[:50]}..."
+
 
 
 class Instrument(models.Model):

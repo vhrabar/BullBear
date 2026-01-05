@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, Company, CompanyNews
+from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, Company, CompanyNews, \
+    EarningsReport, Dividend
 
 
 class InstrumentSerializer(serializers.ModelSerializer):
@@ -73,3 +74,14 @@ class CompanyNewsSerializer(serializers.ModelSerializer):
         model = CompanyNews
         fields = ['id', 'companies', 'headline', 'content', 'published_at', 'source', 'url', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
+
+
+class EarningsReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EarningsReport
+        fields = "__all__"
+
+class DividendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dividend
+        fields = "__all__"

@@ -1,6 +1,5 @@
 from django.db import models
 from api.users.models import UserProfile as Profile, UserPortfolio as Portfolio
-from rest_framework.utils import timezone
 
 
 class Company(models.Model):
@@ -205,3 +204,42 @@ class InstrumentQuote(models.Model):
 
     def __str__(self):
         return f"{self.instrument} quote"
+
+
+class EarningsReport(models.Model):
+    """
+    Represents a company's scheduled earnings report.
+    """
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name='earnings_reports'
+    )
+    report_date = models.DateField()
+    fiscal_quarter = models.CharField(max_length=16, blank=True)
+    fiscal_year = models.IntegerField(blank=True, null=True)
+    estimate_eps = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    actual_eps = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+
+    class Meta:
+        ordering = ["report_date"]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.report_date}"
+
+
+class Dividend(models.Model):
+    """
+    Represents a scheduled dividend for a company.
+    """
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name='dividends'
+    )
+    ex_date = models.DateField()
+    payment_date = models.DateField(null=True, blank=True)
+    dividend_amount = models.DecimalField(max_digits=12, decimal_places=4)
+    currency = models.CharField(max_length=3, default="USD")
+
+    class Meta:
+        ordering = ["ex_date"]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.ex_date} - {self.dividend_amount} {self.currency}"

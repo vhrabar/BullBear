@@ -1,14 +1,15 @@
 from django.db.models import OuterRef, Subquery
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, generics
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote, Company, CompanyNews
+from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote, Company, CompanyNews, \
+    EarningsReport, Dividend
 from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
     BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer, CompanySerializer, \
-    CompanyNewsSerializer
+    CompanyNewsSerializer, EarningsReportSerializer, DividendSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
@@ -178,4 +179,15 @@ class CompanyNewsViewSet(viewsets.ModelViewSet):
     queryset = CompanyNews.objects.all().order_by('-published_at')
     serializer_class = CompanyNewsSerializer
     permission_classes = [IsAdminOrReadOnly]
-    
+
+
+class EarningsReportViewSet(viewsets.ModelViewSet):
+    queryset = EarningsReport.objects.all()
+    serializer_class = EarningsReportSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+class DividendViewSet(viewsets.ModelViewSet):
+    queryset = Dividend.objects.all()
+    serializer_class = DividendSerializer
+    permission_classes = [IsAdminOrReadOnly]

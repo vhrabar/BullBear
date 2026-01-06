@@ -1,15 +1,24 @@
-from datetime import datetime, timezone
-from typing import List
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List
 from massive.websocket.models import EquityAgg
 from configuration import settings
 from repo import MarketDataRepository
 
 
 class MinuteAggregateIngestionService:
+    """
+    Aggregates live 1-minute aggregates into STRICT 10-minute candles.
+    """
+
+    BUCKET_MINUTES = 10
 
     def __init__(self):
         self.repo = MarketDataRepository()
         self.instrument_map = self.repo.load_instrument_map()
+
+        # in-memory aggregation store
+        # key: (instrument_id, bucket_start)
+        self.buckets: Dict[tuple[int, datetime], dict] = {}
 
     def handle_messages(self, messages: List[EquityAgg]):
         for m in messages:
@@ -17,73 +26,88 @@ class MinuteAggregateIngestionService:
                 continue
 
             instrument_id = self.map_symbol_to_id(m.symbol)
-
-            # -----------------------------
-            # CANDLE (InstrumentIntervalData)
-            # -----------------------------
-            candle_payload = {
-                "instrument_id": instrument_id,
-                "start_time": datetime.utcfromtimestamp(m.start_timestamp / 1000),
-                "end_time": datetime.utcfromtimestamp(m.end_timestamp / 1000),
-                "open_price": m.open,
-                "high_price": m.high,
-                "low_price": m.low,
-                "close_price": m.close,
-                "volume": m.volume,
-                "data_source": "massive",
-                "updated_at": datetime.now(tz=timezone.utc),
-            }
-
-            # -----------------------------
-            # QUOTE (InstrumentQuote)
-            # -----------------------------
-            quote_payload = {
-                "instrument": m.symbol,
-                "bid_price": m.open,
-                "bid_size": m.volume,
-
-                "ask_price": m.close,
-                "ask_size": m.volume,
-
-                "last_price": m.close,
-                "currency": "USD",
-                "exchange": "NASDAQ",
-                "market_state": "open",
-
-                "daily_change": m.close - m.open,
-                "daily_change_percent": ((m.close - m.open) / m.open) * 100 if m.open else 0,
-
-                "timestamp": datetime.now(tz=timezone.utc),
-                "updated_at": datetime.now(tz=timezone.utc),
-            }
-
-            if settings.TEST_MODE:
-                print("\n=== TEST MODE ===")
-                print("CANDLE:", candle_payload)
-                print("QUOTE:", quote_payload)
-                print("=================\n")
+            if instrument_id < 0:
                 continue
 
-            self.repo.upsert_candle(candle_payload)
-            self.repo.upsert_quote(quote_payload)
+            start = self._to_utc(m.start_timestamp)
+            bucket_start = self._bucket_start(start)
+            bucket_end = bucket_start + timedelta(minutes=self.BUCKET_MINUTES)
+
+            key = (instrument_id, bucket_start)
+
+            if key not in self.buckets:
+                self._create_bucket(
+                    key=key,
+                    instrument_id=instrument_id,
+                    bucket_start=bucket_start,
+                    bucket_end=bucket_end,
+                    m=m,
+                )
+            else:
+                self._update_bucket(self.buckets[key], m)
+
+            self._flush_completed_buckets(now=start)
+
+    def _create_bucket(self, key, instrument_id, bucket_start, bucket_end, m):
+        self.buckets[key] = {
+            "instrument_id": instrument_id,
+            "start_time": bucket_start,
+            "end_time": bucket_end,
+            "open_price": m.open,
+            "high_price": m.high,
+            "low_price": m.low,
+            "close_price": m.close,
+            "volume": m.volume,
+            "data_source": "massive-test",
+            "updated_at": datetime.now(tz=timezone.utc),
+        }
+
+    def _update_bucket(self, bucket: dict, m):
+        bucket["high_price"] = max(bucket["high_price"], m.high)
+        bucket["low_price"] = min(bucket["low_price"], m.low)
+        bucket["close_price"] = m.close
+        bucket["volume"] += m.volume
+        bucket["updated_at"] = datetime.now(tz=timezone.utc)
+
+    def _flush_completed_buckets(self, now: datetime):
+        """
+        Persist only buckets whose window has CLOSED.
+        """
+        to_flush = []
+
+        for key, bucket in self.buckets.items():
+            if now >= bucket["end_time"]:
+                to_flush.append(key)
+
+        for key in to_flush:
+            payload = self.buckets.pop(key)
+
+            if settings.TEST_MODE:
+                print("\n=== TEST MODE (10m Candle) ===")
+                print(payload)
+                print("=============================\n")
+                continue
+
+            self.repo.upsert_candle(payload)
+
+    @staticmethod
+    def _to_utc(ms: int) -> datetime:
+        return datetime.fromtimestamp(ms / 1000, tz=timezone.utc)
+
+    def _bucket_start(self, dt: datetime) -> datetime:
+        minute = (dt.minute // self.BUCKET_MINUTES) * self.BUCKET_MINUTES
+        return dt.replace(minute=minute, second=0, microsecond=0)
 
     def map_symbol_to_id(self, symbol: str) -> int:
         symbol = symbol.upper()
 
-        # cached
         if symbol in self.instrument_map:
             return self.instrument_map[symbol]
 
-        # reload from DB
-        print(f"Symbol '{symbol}' not found. Reloading instrument table...")
         self.instrument_map = self.repo.load_instrument_map()
 
-        # and check again
         if symbol in self.instrument_map:
             return self.instrument_map[symbol]
 
-        # still not found
-        print(f"ERROR: Instrument '{symbol}' does not exist in Django DB.")
+        print(f"[ERROR] Instrument '{symbol}' not found.")
         return -1
-
-

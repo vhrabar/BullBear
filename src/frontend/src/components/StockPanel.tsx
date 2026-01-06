@@ -5,14 +5,6 @@ import TradeDialog from "./TradeDialog.tsx";
 import "./StockPanel.css";
 import CandlestickChart from "./StockChart.tsx";
 
-const data = [
-  { date: new Date("2026-01-01"), open: 100, high: 105, low: 95, close: 102 },
-  { date: new Date("2026-01-02"), open: 102, high: 110, low: 101, close: 108 },
-  { date: new Date("2026-01-03"), open: 108, high: 112, low: 104, close: 107 },
-  { date: new Date("2026-01-04"), open: 107, high: 109, low: 103, close: 105 },
-  { date: new Date("2026-01-05"), open: 105, high: 108, low: 100, close: 102 },
-];
-
 interface Instrument {
   symbol: string;
   name: string;
@@ -114,8 +106,8 @@ function StockPanel({ stock, holding, latest, news, earnings, dividends }: Stock
                 <div className="stock-main-left">
 
                     <div className="chart-placeholder">
-                        <div className="chart-title">Price chart (placeholder)</div>
-                        <CandlestickChart instrument="NVDA" />
+                        <div className="chart-title">Price chart</div>
+                        <CandlestickChart instrument={stock.symbol} />
                     </div>
 
                     <div className="metrics-card">

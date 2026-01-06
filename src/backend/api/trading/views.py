@@ -45,9 +45,22 @@ class PortfolioHoldingViewSet(viewsets.ModelViewSet):
 
 
 class InstrumentIntervalDataViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = InstrumentIntervalData.objects.select_related('instrument').all()
+    """
+    Returns all interval/candle data.
+    Optional filter: ?instrument=<instrument_symbol>
+    """
     serializer_class = InstrumentIntervalDataSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = InstrumentIntervalData.objects.select_related('instrument').all()
+        instrument_name = self.request.query_params.get('instrument')
+
+        if instrument_name:
+            queryset = queryset.filter(instrument__symbol__iexact=instrument_name)
+
+        return queryset.order_by('start_time')
+
 
 
 class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):

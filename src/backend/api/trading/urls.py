@@ -6,7 +6,7 @@ from .views import InstrumentViewSet, InstrumentIntervalDataViewSet, PortfolioHo
 
 router = DefaultRouter()
 router.register(r'instruments', InstrumentViewSet)
-router.register(r'instrument-data', InstrumentIntervalDataViewSet)
+router.register(r'instrument-data', InstrumentIntervalDataViewSet, basename='instrument-data')
 router.register(r'latest-instrument-data', LatestInstrumentDataViewSet, basename='latest-instrument-data')
 router.register(r'latest-instrument-quote', InstrumentQuoteViewSet, basename='latest-instrument-quote')
 router.register(r'portfolio-holdings', PortfolioHoldingViewSet, basename='portfolio-holdings')

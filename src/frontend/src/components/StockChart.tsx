@@ -33,6 +33,8 @@ interface StockChartProps {
     instrument: string;
 }
 
+type TimeRange = "24H" | "1W" | "1M" | "3M" | "ALL";
+
 
 const axisStyle = {
     stroke: "#475569",
@@ -42,12 +44,15 @@ const axisStyle = {
 
 
 export default function StockChart({ instrument }: StockChartProps) {
+
     const containerRef = useRef<HTMLDivElement>(null);
+
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [rawData, setRawData] = useState<StockData[]>([]);
+    const [range, setRange] = useState<TimeRange>("ALL");
 
+    /* ---------- resize observer ---------- */
 
-    // handle resize
     useEffect(() => {
         if (!containerRef.current) return;
 
@@ -85,8 +90,8 @@ export default function StockChart({ instrument }: StockChartProps) {
                             volume: Number(item.volume) || 0,
                         };
                     })
-                    .filter((d : StockData): d is StockData => d !== null)
-                    .sort((a: { date: { getTime: () => number; }; }, b: { date: { getTime: () => number; }; }) => a.date.getTime() - b.date.getTime());
+                    .filter((d): d is StockData => d !== null)
+                    .sort((a, b) => a.date.getTime() - b.date.getTime());
 
                 setRawData(parsed);
             } catch (err: any) {
@@ -99,8 +104,8 @@ export default function StockChart({ instrument }: StockChartProps) {
         return () => controller.abort();
     }, [instrument]);
 
-    // calculate indicators
-    const ema20 = ema()
+    // calculate EMA(20)
+    const ema20 = ema<StockData>()
         .options({ windowSize: 20 })
         .merge((d: StockData, v: number) => {
             d.ema20 = v;
@@ -112,9 +117,9 @@ export default function StockChart({ instrument }: StockChartProps) {
         [rawData]
     );
 
-    // prepare chart data
+    // xScale provider
     const xScaleProvider =
-        discontinuousTimeScaleProviderBuilder()
+        discontinuousTimeScaleProviderBuilder<StockData>()
             .inputDateAccessor(d => d.date);
 
     const {
@@ -124,14 +129,53 @@ export default function StockChart({ instrument }: StockChartProps) {
         displayXAccessor,
     } = xScaleProvider(calculatedData);
 
+    // xExtents based on range
+    const xExtents = useMemo(() => {
+        if (chartData.length < 2) return [0, 1];
+
+        const last = chartData[chartData.length - 1];
+        const lastTime = last.date.getTime();
+
+        let fromTime: number | null = null;
+
+        switch (range) {
+            case "24H":
+                fromTime = lastTime - 24 * 60 * 60 * 1000;
+                break;
+            case "1W":
+                fromTime = lastTime - 7 * 24 * 60 * 60 * 1000;
+                break;
+            case "1M":
+                fromTime = lastTime - 30 * 24 * 60 * 60 * 1000;
+                break;
+            case "3M":
+                fromTime = lastTime - 90 * 24 * 60 * 60 * 1000;
+                break;
+            case "ALL":
+            default:
+                return [
+                    xAccessor(chartData[0]),
+                    xAccessor(chartData[chartData.length - 1]),
+                ];
+        }
+
+        const startIndex = chartData.findIndex(
+            d => d.date.getTime() >= fromTime!
+        );
+
+        const start = startIndex >= 0 ? startIndex : 0;
+
+        return [
+            xAccessor(chartData[start]),
+            xAccessor(chartData[chartData.length - 1]),
+        ];
+    }, [chartData, range, xAccessor]);
+
+
     if (!dimensions.width || !dimensions.height || chartData.length < 2) {
         return <div ref={containerRef} style={{ height: 420 }} />;
     }
 
-    const xExtents = [
-        xAccessor(chartData[0]),
-        xAccessor(chartData[chartData.length - 1]),
-    ];
 
     const priceChartHeight = Math.floor(dimensions.height * 0.7);
     const volumeChartHeight = Math.floor(dimensions.height * 0.3);
@@ -145,8 +189,39 @@ export default function StockChart({ instrument }: StockChartProps) {
                 height: "100%",
                 background: "#020617",
                 borderRadius: 12,
+                position: "relative",
             }}
         >
+            {/* ===== RANGE BUTTONS ===== */}
+            <div
+                style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 12,
+                    display: "flex",
+                    gap: 6,
+                    zIndex: 10,
+                }}
+            >
+                {(["24H", "1W", "1M", "3M", "ALL"] as TimeRange[]).map(r => (
+                    <button
+                        key={r}
+                        onClick={() => setRange(r)}
+                        style={{
+                            padding: "4px 8px",
+                            fontSize: 12,
+                            borderRadius: 6,
+                            border: "1px solid #334155",
+                            background: range === r ? "#334155" : "#020617",
+                            color: "#e5e7eb",
+                            cursor: "pointer",
+                        }}
+                    >
+                        {r}
+                    </button>
+                ))}
+            </div>
+
             <ChartCanvas
                 seriesName={instrument}
                 height={dimensions.height}
@@ -159,28 +234,26 @@ export default function StockChart({ instrument }: StockChartProps) {
                 displayXAccessor={displayXAccessor}
                 xExtents={xExtents}
             >
-                {/* ================= PRICE CHART ================= */}
+                {/* ===== PRICE ===== */}
                 <Chart
                     id={1}
                     height={priceChartHeight}
-                    yExtents={d => [d.high, d.low]}
+                    yExtents={(d: StockData) => [d.high, d.low]}
                 >
                     <XAxis
                         {...axisStyle}
                         ticks={20}
                         tickFormat={timeFormat("%m-%d %H:%M")}
                     />
-
                     <YAxis
                         {...axisStyle}
                         ticks={10}
                         tickFormat={format(".2f")}
                     />
 
-                    {/* ===== TOP-LEFT LEGEND ===== */}
                     <SingleValueTooltip
                         origin={[12, 8]}
-                        yAccessor={d => d.close}
+                        yAccessor={(d: StockData) => d.close}
                         yLabel="Close"
                         yDisplayFormat={format(".2f")}
                         valueFill="#e5e7eb"
@@ -189,7 +262,7 @@ export default function StockChart({ instrument }: StockChartProps) {
 
                     <SingleValueTooltip
                         origin={[12, 26]}
-                        yAccessor={d => d.ema20}
+                        yAccessor={(d: StockData) => d.ema20 ?? NaN}
                         yLabel="EMA(20)"
                         yDisplayFormat={format(".2f")}
                         valueFill="#38bdf8"
@@ -198,12 +271,13 @@ export default function StockChart({ instrument }: StockChartProps) {
 
                     <SingleValueTooltip
                         origin={[12, 44]}
-                        yAccessor={d => d.volume}
+                        yAccessor={(d: StockData) => d.volume}
                         yLabel="Volume"
                         yDisplayFormat={format("~s")}
                         valueFill="#22c55e"
                         labelFill="#94a3b8"
                     />
+
 
                     <MouseCoordinateX
                         displayFormat={timeFormat("%Y-%m-%d %H:%M")}
@@ -211,7 +285,6 @@ export default function StockChart({ instrument }: StockChartProps) {
                         fill="#020617"
                         textFill="#e5e7eb"
                     />
-
                     <MouseCoordinateY
                         displayFormat={format(".2f")}
                         stroke="#64748b"
@@ -220,32 +293,30 @@ export default function StockChart({ instrument }: StockChartProps) {
                     />
 
                     <CandlestickSeries widthRatio={0.6} />
-
                     <LineSeries
-                        yAccessor={d => d.ema20}
+                        yAccessor={(d: StockData) => d.ema20}
                         strokeStyle="#38bdf8"
                         strokeWidth={2}
                     />
                 </Chart>
 
-                {/* ================= VOLUME CHART ================= */}
+                {/* ===== VOLUME ===== */}
                 <Chart
                     id={2}
                     height={volumeChartHeight}
-                    origin={() => [0, priceChartHeight + 50]}
-                    yExtents={d => d.volume}
+                    origin={() => [0, priceChartHeight + 12]}
+                    yExtents={(d: StockData) => d.volume}
                 >
                     <YAxis {...axisStyle} ticks={5} />
-
                     <BarSeries
-                        yAccessor={d => d.volume}
-                        fillStyle={d =>
+                        yAccessor={(d: StockData) => d.volume}
+                        fillStyle={(d: StockData) =>
                             d.close >= d.open ? "#22c55e" : "#ef4444"
                         }
                     />
                 </Chart>
 
-                <CrossHairCursor stroke="#64748b" />
+                <CrossHairCursor strokeStyle="#64748b" />
             </ChartCanvas>
         </div>
     );

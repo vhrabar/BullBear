@@ -1,25 +1,23 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import {
     ChartCanvas,
     Chart,
     CandlestickSeries,
-    LineSeries,
     BarSeries,
+    LineSeries,
     XAxis,
     YAxis,
-    CrossHairCursor,
     MouseCoordinateX,
     MouseCoordinateY,
-    OHLCTooltip,
-    discontinuousTimeScaleProviderBuilder,
-    lastVisibleItemBasedZoomAnchor,
+    CrossHairCursor,
+    SingleValueTooltip,
     ema,
+    discontinuousTimeScaleProviderBuilder,
 } from "react-financial-charts";
-import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
+import { format } from "d3-format";
 
-import "./StockChart.css";
 
 interface StockData {
     date: Date;
@@ -35,25 +33,34 @@ interface StockChartProps {
     instrument: string;
 }
 
+
+const axisStyle = {
+    stroke: "#475569",
+    tickStroke: "#475569",
+    tickLabelFill: "#e5e7eb",
+};
+
+
 export default function StockChart({ instrument }: StockChartProps) {
-    const [data, setData] = useState<StockData[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const [rawData, setRawData] = useState<StockData[]>([]);
 
-    // Measure container size
+
+    // handle resize
     useEffect(() => {
         if (!containerRef.current) return;
-        const resizeObserver = new ResizeObserver((entries) => {
-            for (let entry of entries) {
-                const { width, height } = entry.contentRect;
-                setDimensions({ width, height });
-            }
+
+        const observer = new ResizeObserver(entries => {
+            const { width, height } = entries[0].contentRect;
+            setDimensions({ width, height });
         });
-        resizeObserver.observe(containerRef.current);
-        return () => resizeObserver.disconnect();
+
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
     }, []);
 
-    // Fetch data
+    // fetch data
     useEffect(() => {
         const controller = new AbortController();
 
@@ -63,27 +70,28 @@ export default function StockChart({ instrument }: StockChartProps) {
                     `/api/trading/instrument-data/?instrument=${instrument}`,
                     { signal: controller.signal }
                 );
-                res.data.forEach((item, i) => {
-    const parsedDate = new Date(item.start_time);
-    console.log(`Index ${i}: "${item.start_time}" =>`, parsedDate);
-});
 
-                const chartData: StockData[] = res.data
-                    .map((item: any) => ({
-                        date: new Date(item.start_time),
-                        open: Number(item.open_price),
-                        high: Number(item.high_price),
-                        low: Number(item.low_price),
-                        close: Number(item.close_price),
-                        volume: Number(item.volume) || 0,
-                    }))
-                    .filter((d) => d.date instanceof Date && !isNaN(d.date.getTime()))
-                    .sort((a, b) => a.date.getTime() - b.date.getTime());
+                const parsed: StockData[] = res.data
+                    .map((item: any) => {
+                        const date = new Date(item.start_time);
+                        if (isNaN(date.getTime())) return null;
 
-                setData(chartData);
+                        return {
+                            date,
+                            open: +item.open_price,
+                            high: +item.high_price,
+                            low: +item.low_price,
+                            close: +item.close_price,
+                            volume: Number(item.volume) || 0,
+                        };
+                    })
+                    .filter((d : StockData): d is StockData => d !== null)
+                    .sort((a: { date: { getTime: () => number; }; }, b: { date: { getTime: () => number; }; }) => a.date.getTime() - b.date.getTime());
+
+                setRawData(parsed);
             } catch (err: any) {
-                if (axios.isCancel(err)) return;
-                console.error("Error fetching chart data:", err);
+                if (err.code === "ERR_CANCELED") return;
+                throw err;
             }
         }
 
@@ -91,82 +99,153 @@ export default function StockChart({ instrument }: StockChartProps) {
         return () => controller.abort();
     }, [instrument]);
 
-    // Show loading if container not measured or no data
-    if (dimensions.width === 0 || dimensions.height === 0 || data.length < 2) {
-        return <div ref={containerRef} style={{ width: "100%", height: "400px" }}>Loading chart...</div>;
-    }
-
-    // Calculate EMA
+    // calculate indicators
     const ema20 = ema()
-        .id(1)
         .options({ windowSize: 20 })
-         .merge((d: StockData, c: number) => { d.ema20 = c; })
+        .merge((d: StockData, v: number) => {
+            d.ema20 = v;
+        })
         .accessor((d: StockData) => d.ema20);
 
-    console.log("Original data size:", data.length);
-    const calculatedData = ema20(data);
-    console.log("Calculated data size:", calculatedData.length);
+    const calculatedData = useMemo(
+        () => (rawData.length ? ema20([...rawData]) : []),
+        [rawData]
+    );
 
-    const xScaleProvider = discontinuousTimeScaleProviderBuilder()
-        .inputDateAccessor((d: StockData) => d.date);
+    // prepare chart data
+    const xScaleProvider =
+        discontinuousTimeScaleProviderBuilder()
+            .inputDateAccessor(d => d.date);
 
-    const { data: chartData, xScale, xAccessor, displayXAccessor } = xScaleProvider(calculatedData);
+    const {
+        data: chartData,
+        xScale,
+        xAccessor,
+        displayXAccessor,
+    } = xScaleProvider(calculatedData);
 
-    const startIndex = Math.max(chartData.length - 100, 0);
-    const endIndex = chartData.length - 1;
-    const xExtents = [xAccessor(chartData[startIndex]), xAccessor(chartData[endIndex])];
+    if (!dimensions.width || !dimensions.height || chartData.length < 2) {
+        return <div ref={containerRef} style={{ height: 420 }} />;
+    }
 
-    // Calculate sub-chart heights
+    const xExtents = [
+        xAccessor(chartData[0]),
+        xAccessor(chartData[chartData.length - 1]),
+    ];
+
     const priceChartHeight = Math.floor(dimensions.height * 0.7);
-    const volumeChartHeight = Math.floor(dimensions.height * 0.25);
+    const volumeChartHeight = Math.floor(dimensions.height * 0.3);
+
 
     return (
-        <div ref={containerRef} style={{ width: "100%", height: "100%" }} className="candlestick-chart-container">
+        <div
+            ref={containerRef}
+            style={{
+                width: "100%",
+                height: "100%",
+                background: "#020617",
+                borderRadius: 12,
+            }}
+        >
             <ChartCanvas
+                seriesName={instrument}
                 height={dimensions.height}
                 width={dimensions.width}
                 ratio={window.devicePixelRatio}
-                margin={{ left: 60, right: 60, top: 20, bottom: 30 }}
-                seriesName={instrument}
+                margin={{ left: 70, right: 80, top: 40, bottom: 40 }}
                 data={chartData}
                 xScale={xScale}
                 xAccessor={xAccessor}
                 displayXAccessor={displayXAccessor}
                 xExtents={xExtents}
-                zoomAnchor={lastVisibleItemBasedZoomAnchor}
             >
-                {/* PRICE CHART */}
-                <Chart id={1} height={priceChartHeight} yExtents={(d: StockData) => [d.high, d.low]}>
-                    <XAxis stroke="#374151" tickStroke="#9ca3af" fontSize={11} />
-                    <YAxis stroke="#374151" tickStroke="#9ca3af" fontSize={11} />
-                    <MouseCoordinateX displayFormat={timeFormat("%Y-%m-%d %H:%M")} />
-                    <MouseCoordinateY displayFormat={format(".2f")} />
-                    <CandlestickSeries
-                        fill={(d: StockData) => (d.close > d.open ? "#22c55e" : "#ef4444")}
-                        wickStroke={(d: StockData) => (d.close > d.open ? "#22c55e" : "#ef4444")}
-                        width={8}
+                {/* ================= PRICE CHART ================= */}
+                <Chart
+                    id={1}
+                    height={priceChartHeight}
+                    yExtents={d => [d.high, d.low]}
+                >
+                    <XAxis
+                        {...axisStyle}
+                        ticks={20}
+                        tickFormat={timeFormat("%m-%d %H:%M")}
                     />
-                    <LineSeries yAccessor={(d: StockData) => d.ema20} stroke="#38bdf8" strokeWidth={1.5} />
-                    <OHLCTooltip origin={[8, 16]} />
+
+                    <YAxis
+                        {...axisStyle}
+                        ticks={10}
+                        tickFormat={format(".2f")}
+                    />
+
+                    {/* ===== TOP-LEFT LEGEND ===== */}
+                    <SingleValueTooltip
+                        origin={[12, 8]}
+                        yAccessor={d => d.close}
+                        yLabel="Close"
+                        yDisplayFormat={format(".2f")}
+                        valueFill="#e5e7eb"
+                        labelFill="#94a3b8"
+                    />
+
+                    <SingleValueTooltip
+                        origin={[12, 26]}
+                        yAccessor={d => d.ema20}
+                        yLabel="EMA(20)"
+                        yDisplayFormat={format(".2f")}
+                        valueFill="#38bdf8"
+                        labelFill="#94a3b8"
+                    />
+
+                    <SingleValueTooltip
+                        origin={[12, 44]}
+                        yAccessor={d => d.volume}
+                        yLabel="Volume"
+                        yDisplayFormat={format("~s")}
+                        valueFill="#22c55e"
+                        labelFill="#94a3b8"
+                    />
+
+                    <MouseCoordinateX
+                        displayFormat={timeFormat("%Y-%m-%d %H:%M")}
+                        stroke="#64748b"
+                        fill="#020617"
+                        textFill="#e5e7eb"
+                    />
+
+                    <MouseCoordinateY
+                        displayFormat={format(".2f")}
+                        stroke="#64748b"
+                        fill="#020617"
+                        textFill="#e5e7eb"
+                    />
+
+                    <CandlestickSeries widthRatio={0.6} />
+
+                    <LineSeries
+                        yAccessor={d => d.ema20}
+                        strokeStyle="#38bdf8"
+                        strokeWidth={2}
+                    />
                 </Chart>
 
-                {/* VOLUME CHART */}
+                {/* ================= VOLUME CHART ================= */}
                 <Chart
                     id={2}
                     height={volumeChartHeight}
-                    origin={(w, h) => [0, priceChartHeight]}
-                    yExtents={(d: StockData) => d.volume}
+                    origin={() => [0, priceChartHeight + 50]}
+                    yExtents={d => d.volume}
                 >
-                    <YAxis ticks={3} tickFormat={(v) => `${(v / 1_000_000).toFixed(1)}M`} stroke="#374151" tickStroke="#9ca3af" fontSize={10} />
+                    <YAxis {...axisStyle} ticks={5} />
+
                     <BarSeries
-                        yAccessor={(d: StockData) => d.volume}
-                        fill={(d: StockData) =>
-                            d.close > d.open ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)"
+                        yAccessor={d => d.volume}
+                        fillStyle={d =>
+                            d.close >= d.open ? "#22c55e" : "#ef4444"
                         }
                     />
                 </Chart>
 
-                <CrossHairCursor stroke="#e5e7eb" />
+                <CrossHairCursor stroke="#64748b" />
             </ChartCanvas>
         </div>
     );

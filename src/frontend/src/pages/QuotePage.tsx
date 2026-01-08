@@ -116,16 +116,17 @@ function QuotePage() {
   }, [symbol]);
 
   // Fetch latest company news (latest 3)
-  useEffect(() => {
+ useEffect(() => {
   if (!symbol) return;
 
-  fetch(`/api/trading/news/?company__ticker=${symbol}&ordering=-published_at&limit=3`, {
+  fetch(`/api/trading/news/?companies__ticker=${symbol}&ordering=-published_at&limit=3`, {
     credentials: "include",
   })
     .then((res) => res.json())
-    .then((data) => setNews(data || []))
+    .then((data) => setNews(data.results || []))
     .catch(() => setNews([]));
 }, [symbol]);
+
 
   useEffect(() => {
   if (!symbol) return;

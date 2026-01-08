@@ -1,6 +1,8 @@
 from django.db.models import OuterRef, Subquery
-from rest_framework import viewsets, permissions, generics
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions, generics, filters
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,6 +26,13 @@ class IsAdminOrReadOnly(BasePermission):
         if request.method in SAFE_METHODS:
             return True
         return request.user and request.user.is_staff
+
+class NewsPagination(LimitOffsetPagination):
+    """
+    Pagination class for company news.
+    """
+    default_limit = 3
+    max_limit = 10
 
 
 class PortfolioHoldingViewSet(viewsets.ModelViewSet):
@@ -188,10 +197,26 @@ class CompanyViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
 
-class CompanyNewsViewSet(viewsets.ModelViewSet):
-    queryset = CompanyNews.objects.all().order_by('-published_at')
+
+
+class CompanyNewsViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CompanyNews.objects.all()
     serializer_class = CompanyNewsSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "companies__ticker": ["exact"],
+    }
+
+    ordering_fields = ["published_at"]
+    ordering = ["-published_at"]
+
+    pagination_class = NewsPagination
 
 
 class EarningsReportViewSet(viewsets.ModelViewSet):

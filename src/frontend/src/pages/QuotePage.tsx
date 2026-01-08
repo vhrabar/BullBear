@@ -123,7 +123,7 @@ function QuotePage() {
     credentials: "include",
   })
     .then((res) => res.json())
-    .then((data) => setNews(data || [])) // <-- use data directly, not data.results
+    .then((data) => setNews(data || []))
     .catch(() => setNews([]));
 }, [symbol]);
 

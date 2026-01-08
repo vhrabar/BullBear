@@ -51,8 +51,7 @@ export default function StockChart({ instrument }: StockChartProps) {
     const [rawData, setRawData] = useState<StockData[]>([]);
     const [range, setRange] = useState<TimeRange>("ALL");
 
-    /* ---------- resize observer ---------- */
-
+    // handle resize
     useEffect(() => {
         if (!containerRef.current) return;
 
@@ -105,7 +104,7 @@ export default function StockChart({ instrument }: StockChartProps) {
     }, [instrument]);
 
     // calculate EMA(20)
-    const ema20 = ema<StockData>()
+    const ema20 = ema()
         .options({ windowSize: 20 })
         .merge((d: StockData, v: number) => {
             d.ema20 = v;
@@ -119,7 +118,7 @@ export default function StockChart({ instrument }: StockChartProps) {
 
     // xScale provider
     const xScaleProvider =
-        discontinuousTimeScaleProviderBuilder<StockData>()
+        discontinuousTimeScaleProviderBuilder()
             .inputDateAccessor(d => d.date);
 
     const {
@@ -177,8 +176,11 @@ export default function StockChart({ instrument }: StockChartProps) {
     }
 
 
-    const priceChartHeight = Math.floor(dimensions.height * 0.7);
-    const volumeChartHeight = Math.floor(dimensions.height * 0.3);
+    const margin = { left: 70, right: 80, top: 40, bottom: 40 };
+    const drawableHeight = dimensions.height - margin.top - margin.bottom;
+
+    const priceChartHeight = Math.floor(drawableHeight * 0.7);
+    const volumeChartHeight = drawableHeight - priceChartHeight;
 
 
     return (
@@ -227,7 +229,7 @@ export default function StockChart({ instrument }: StockChartProps) {
                 height={dimensions.height}
                 width={dimensions.width}
                 ratio={window.devicePixelRatio}
-                margin={{ left: 70, right: 80, top: 40, bottom: 40 }}
+                margin={margin}
                 data={chartData}
                 xScale={xScale}
                 xAccessor={xAccessor}
@@ -240,11 +242,6 @@ export default function StockChart({ instrument }: StockChartProps) {
                     height={priceChartHeight}
                     yExtents={(d: StockData) => [d.high, d.low]}
                 >
-                    <XAxis
-                        {...axisStyle}
-                        ticks={20}
-                        tickFormat={timeFormat("%m-%d %H:%M")}
-                    />
                     <YAxis
                         {...axisStyle}
                         ticks={10}
@@ -279,12 +276,6 @@ export default function StockChart({ instrument }: StockChartProps) {
                     />
 
 
-                    <MouseCoordinateX
-                        displayFormat={timeFormat("%Y-%m-%d %H:%M")}
-                        stroke="#64748b"
-                        fill="#020617"
-                        textFill="#e5e7eb"
-                    />
                     <MouseCoordinateY
                         displayFormat={format(".2f")}
                         stroke="#64748b"
@@ -304,10 +295,23 @@ export default function StockChart({ instrument }: StockChartProps) {
                 <Chart
                     id={2}
                     height={volumeChartHeight}
-                    origin={() => [0, priceChartHeight + 12]}
+                    origin={() => [0, priceChartHeight]}
                     yExtents={(d: StockData) => d.volume}
                 >
+                    <XAxis
+                        {...axisStyle}
+                        ticks={20}
+                        tickFormat={timeFormat("%m-%d %H:%M")}
+                    />
                     <YAxis {...axisStyle} ticks={5} />
+
+                    <MouseCoordinateX
+                        displayFormat={timeFormat("%Y-%m-%d %H:%M")}
+                        stroke="#64748b"
+                        fill="#020617"
+                        textFill="#e5e7eb"
+                    />
+
                     <BarSeries
                         yAccessor={(d: StockData) => d.volume}
                         fillStyle={(d: StockData) =>

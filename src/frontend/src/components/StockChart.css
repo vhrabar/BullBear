@@ -1,0 +1,13 @@
+.candlestick-chart-container {
+    background: linear-gradient(135deg, #020617, #020617);
+    border-radius: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid #1f2937;
+}
+
+.chart-loading {
+    color: #9ca3af;
+    padding: 2rem;
+    text-align: center;
+    font-size: 1rem;
+}

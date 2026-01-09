@@ -160,3 +160,14 @@ class InstrumentQuote(models.Model):
 
     def __str__(self):
         return f"{self.instrument} quote"
+
+class Transaction(models.Model):
+    portfolio = models.ForeignKey(Portfolio, on_delete=models.CASCADE, related_name="transactions")
+    instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
+    type = models.CharField(max_length=10, choices=[("buy","Buy"),("sell","Sell")])
+    quantity = models.DecimalField(max_digits=20, decimal_places=4)
+    price = models.DecimalField(max_digits=20, decimal_places=6)
+    executed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.type.upper()} {self.quantity} {self.instrument.symbol} for {self.portfolio.name}"

@@ -2,7 +2,8 @@ import { useState } from "react";
 import TradeDialog from "./TradeDialog.tsx";
 
 
-import "./StockPanel.css";
+import "../styles/StockPanel.css";
+import StockChart from "./StockChart.tsx";
 
 interface Instrument {
   symbol: string;
@@ -106,7 +107,7 @@ function StockPanel({ stock, holding, latest, news, earnings, dividends }: Stock
 
                     <div className="chart-placeholder">
                         <div className="chart-title">Price chart</div>
-                        <CandlestickChart instrument={stock.symbol} />
+                        <StockChart instrument={stock.symbol} />
                     </div>
 
                     <div className="metrics-card">

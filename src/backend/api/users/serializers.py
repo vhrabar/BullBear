@@ -40,6 +40,6 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 
     def validate_message(self, value: str) -> str:
         value = value.strip()
-        if len(value) < 10:
+        if len(value) < 1:
             raise serializers.ValidationError("Message is too short.")
         return value

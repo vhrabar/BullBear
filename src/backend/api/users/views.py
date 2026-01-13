@@ -53,8 +53,12 @@ class ContactViewSet(viewsets.ViewSet):
         ip = request.META.get("REMOTE_ADDR")
         ua = request.META.get("HTTP_USER_AGENT", "")
 
+        profile = None
+        if request.user.is_authenticated:
+            profile = UserProfile.objects.filter(user=request.user).first()
+
         msg: ContactMessage = serializer.save(
-            user=request.user if request.user.is_authenticated else None,
+            user=profile,
             ip_address=ip,
             user_agent=ua[:2000],
         )

@@ -25,7 +25,7 @@ const AppRouter: React.FC = () => {
                 <Route path="/licence" element={<Licence />}/>
                 <Route path="/docs/:page" element={<DocsLayout />} />
                 <Route path="/docs" element={<DocsLayout />} />
-                <Route path="/features" element={<><Features/><Footer/></>} />
+                <Route path="/features" element={<Features/>} />
                 {/*<Route path="/pricing" element={<Pricing />} />*/}
                 {/*<Route path="/faq" element={<FAQ />} />*/}
                 <Route path="/contact" element={<Contact />} />

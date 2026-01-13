@@ -3,7 +3,6 @@ import TradeDialog from "./TradeDialog.tsx";
 
 
 import "./StockPanel.css";
-import CandlestickChart from "./StockChart.tsx";
 
 interface Instrument {
   symbol: string;

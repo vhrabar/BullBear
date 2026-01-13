@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 // @ts-ignore
-import "./Docs.css";
+import "../styles/Docs.css";
 import Footer from "../components/Footer.tsx";
 
 const markdownPages = [

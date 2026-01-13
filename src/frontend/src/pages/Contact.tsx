@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import "./Contact.css";
+import "../styles/Contact.css";
 import Footer from "../components/Footer.tsx";
 
 interface ContactProfile {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./StockView.css";
+import "../styles/StockView.css";
 
 export interface Holding {
   id: number;

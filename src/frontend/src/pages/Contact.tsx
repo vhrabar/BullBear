@@ -29,7 +29,7 @@ function ContactPage() {
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          throw new Error(data?.detail || "Failed to load contact data.");
+          throw new Error(data?.detail || "Neuspješno učitavanje kontaktnih podataka.");
         }
         return data;
       })
@@ -53,12 +53,12 @@ function ContactPage() {
   }
 
   function validate(): string | null {
-    if (!profile.full_name.trim()) return "Full name is required.";
-    if (!profile.email.trim()) return "Email is required.";
-    if (!profile.subject.trim()) return "Subject is required.";
-    if (!profile.message.trim()) return "Message is required.";
+    if (!profile.full_name.trim()) return "Ime i prezime je obavezno.";
+    if (!profile.email.trim()) return "E-mail je obavezan.";
+    if (!profile.subject.trim()) return "Predmet je obavezan.";
+    if (!profile.message.trim()) return "Poruka je obavezna.";
     if (!/^\S+@\S+\.\S+$/.test(profile.email.trim()))
-      return "Please enter a valid email address.";
+      return "Molimo unesite valjanu e-mail adresu.";
     return null;
   }
 
@@ -87,30 +87,30 @@ function ContactPage() {
 
       if (!res.ok) {
         throw new Error(
-          data?.detail || data?.error || "Message could not be sent."
+          data?.detail || data?.error || "Poruka nije mogla biti poslana."
         );
       }
 
-      setSuccess("Your message has been sent successfully.");
+      setSuccess("Vaša poruka je uspješno poslana.");
       setProfile((prev) => ({ ...prev, subject: "", message: "" }));
     } catch (e: any) {
-      setError(e?.message || "Unexpected error.");
+      setError(e?.message || "Neočekivana pogreška.");
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (loading) return <div className="contact-state">Loading contact form...</div>;
+  if (loading) return <div className="contact-state">Učitavanje kontakt forme...</div>;
   if (error && !submitting)
     return (
       <div className="contact-state contact-state--error">
-        <div className="contact-state__title">Contact Error</div>
+        <div className="contact-state__title">Pogreška kontakta</div>
         <div className="contact-state__desc">{error}</div>
         <button
           onClick={() => window.location.reload()}
           className="contact-btn contact-btn--neutral"
         >
-          Reload
+          Ponovno učitaj
         </button>
       </div>
     );
@@ -121,58 +121,58 @@ function ContactPage() {
       <div className="contact-page">
         <div className="contact-card">
           <div className="contact-header">
-            <div className="contact-title">Contact</div>
+            <div className="contact-title">Kontakt</div>
             <div className="contact-subtitle">
-              Use this form to contact support or the administrators.
+              Koristite ovu formu za kontaktiranje podrške ili administratora.
             </div>
           </div>
 
           <form onSubmit={onSubmit} className="contact-form">
             <div className="contact-grid">
               <div className="contact-field">
-                <label className="contact-label">Full name</label>
+                <label className="contact-label">Ime i prezime</label>
                 <input
                   className="contact-input"
                   name="full_name"
                   value={profile.full_name}
                   onChange={onChange}
-                  placeholder="Your full name"
+                  placeholder="Vaše ime i prezime"
                   autoComplete="name"
                 />
               </div>
 
               <div className="contact-field">
-                <label className="contact-label">Email</label>
+                <label className="contact-label">E-mail</label>
                 <input
                   className="contact-input"
                   name="email"
                   value={profile.email}
                   onChange={onChange}
-                  placeholder="you@example.com"
+                  placeholder="vi@primjer.com"
                   autoComplete="email"
                 />
               </div>
             </div>
 
             <div className="contact-field">
-              <label className="contact-label">Subject</label>
+              <label className="contact-label">Predmet</label>
               <input
                 className="contact-input"
                 name="subject"
                 value={profile.subject}
                 onChange={onChange}
-                placeholder="What is the issue about?"
+                placeholder="O čemu se radi?"
               />
             </div>
 
             <div className="contact-field">
-              <label className="contact-label">Message</label>
+              <label className="contact-label">Poruka</label>
               <textarea
                 className="contact-input contact-textarea"
                 name="message"
                 value={profile.message}
                 onChange={onChange}
-                placeholder="Write your message here..."
+                placeholder="Ovdje napišite svoju poruku..."
               />
             </div>
 
@@ -189,7 +189,7 @@ function ContactPage() {
                 className="contact-btn contact-btn--primary"
                 disabled={submitting}
               >
-                {submitting ? "Sending..." : "Send"}
+                {submitting ? "Slanje..." : "Pošalji"}
               </button>
 
               <button
@@ -201,7 +201,7 @@ function ContactPage() {
                   setProfile((prev) => ({ ...prev, subject: "", message: "" }));
                 }}
               >
-                Clear
+                Očisti
               </button>
             </div>
           </form>

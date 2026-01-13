@@ -1,79 +1,114 @@
 .about {
-  padding: 6rem 2rem;
-  background: white;
+  padding: 5rem 2rem;
+  background: transparent; /* inherits global dark theme */
 }
 
 .about-container {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.about-content {
-  text-align: center;
+/* Main card like dashboard panels */
+.about-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid #1f2937;
+  border-radius: 0.9rem;
+  overflow: hidden;
+  color: #f3f4f6;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(6px);
+}
+
+/* Header strip with subtle blue accent */
+.about-header {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid #1f2937;
+  background: rgba(37, 99, 235, 0.18);
 }
 
 .about-title {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #1e293b;
-  margin-bottom: 2.5rem;
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #e5e7eb;
+  margin: 0;
+}
+
+/* Body */
+.about-body {
+  padding: 1.6rem 1.5rem;
 }
 
 .about-text {
-  font-size: 1.125rem;
-  line-height: 1.8;
-  color: #475569;
-  margin-bottom: 3rem;
+  font-size: 1.02rem;
+  line-height: 1.85;
+  color: rgba(156, 163, 175, 0.95);
+  margin-bottom: 1.75rem;
 }
 
 .about-text p {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .about-text strong {
-  color: #1e293b;
-  font-weight: 600;
+  color: #e5e7eb;
+  font-weight: 800;
 }
 
+/* Info grid (cards inside card) */
 .about-info {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
-  margin-top: 3rem;
-  padding-top: 3rem;
-  border-top: 2px solid #e2e8f0;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid rgba(31, 41, 55, 0.85);
+}
+
+.info-item {
+  background: rgba(10, 15, 31, 0.9);
+  border: 1px solid #1f2937;
+  border-radius: 0.85rem;
+  padding: 1.15rem 1.2rem;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  transition: transform 0.12s ease, border-color 0.2s ease;
+}
+
+.info-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .info-item h3 {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 950;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
+  letter-spacing: 0.07em;
+  color: rgba(156, 163, 175, 0.95);
   margin-bottom: 0.5rem;
 }
 
 .info-item p {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 1.12rem;
+  font-weight: 900;
+  color: #e5e7eb;
+  margin: 0;
 }
 
 @media (max-width: 768px) {
   .about {
-    padding: 4rem 1.5rem;
+    padding: 4.25rem 1.25rem;
   }
 
-  .about-title {
-    font-size: 2.25rem;
+  .about-body {
+    padding: 1.25rem 1.1rem;
   }
 
   .about-text {
-    font-size: 1rem;
+    font-size: 0.98rem;
   }
 
   .about-info {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
   }
 }

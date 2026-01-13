@@ -40,6 +40,7 @@ const DocsLayout: React.FC = () => {
       .catch((err) => setMarkdown(`# Error\n${err.message}`));
   }, [currentPage]);
 
+    // @ts-ignore
     return (
         <>
             <div className="docs-container">

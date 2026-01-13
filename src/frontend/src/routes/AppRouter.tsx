@@ -14,6 +14,7 @@ import About from "../components/About.tsx";
 import Features from "../components/Features.tsx";
 import Footer from "../components/Footer.tsx";
 import PageNotFound from "../pages/PageNotFound.tsx";
+import Contact from "../pages/Contact.tsx";
 
 
 const AppRouter: React.FC = () => {
@@ -26,8 +27,8 @@ const AppRouter: React.FC = () => {
                 <Route path="/docs" element={<DocsLayout />} />
                 <Route path="/features" element={<><Features/><Footer/></>} />
                 {/*<Route path="/pricing" element={<Pricing />} />*/}
-                {/*<Route path="/pricing" element={<FAQ />} />*/}
-                {/*<Route path="/pricing" element={<Contact />} />*/}
+                {/*<Route path="/faq" element={<FAQ />} />*/}
+                <Route path="/contact" element={<Contact />} />
                 <Route path="/about" element={<><About/><Footer/></>} />
                 <Route path="/login" element={<Login/>}/>
 

@@ -11,7 +11,7 @@ DEBUG = False   # overridden later
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    'jazzmin',
+    #'jazzmin',
 
     'django.contrib.admin',
     'django.contrib.auth',

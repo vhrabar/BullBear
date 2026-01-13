@@ -1,0 +1,16 @@
+User-agent: *
+# Allow indexing of public pages
+Allow: /$
+Allow: /features
+Allow: /docs
+Allow: /faq
+Allow: /pricing
+Allow: /licence
+Allow: /about
+Allow: /contact
+
+# Block everything else
+Disallow: /
+
+# Sitemap location
+Sitemap: https://www.bull-bear.app/sitemap.xml

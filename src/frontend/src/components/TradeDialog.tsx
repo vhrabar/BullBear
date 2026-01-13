@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./TradeDialog.css";
+import "../styles/TradeDialog.css";
 import {getCSRFToken} from "../utils/csrf.ts";
 
 interface TradeDIalogProps {

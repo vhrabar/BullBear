@@ -1,0 +1,18 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(
+      1200px 700px at 30% 10%,
+      rgba(37, 99, 235, 0.14),
+      transparent 60%
+    ),
+    linear-gradient(180deg, #050816 0%, #0a1022 40%, #0b1224 100%);
+  color: #e5e7eb;
+}
+
+body {
+  overscroll-behavior: none;
+}

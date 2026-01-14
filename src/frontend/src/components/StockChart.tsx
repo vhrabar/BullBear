@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import axios from "axios";
 import {
     ChartCanvas,
@@ -199,7 +199,7 @@ export default function StockChart({instrument}: StockChartProps) {
         }
 
         const startIndex = chartData.findIndex(
-            (d) => d.date.getTime() >= fromTime!
+            (d: { date: { getTime: () => number; }; }) => d.date.getTime() >= fromTime!
         );
         const start = startIndex >= 0 ? startIndex : 0;
 

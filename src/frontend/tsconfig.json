@@ -6,7 +6,8 @@
   ],
   "compilerOptions": {
         "lib": [
-          "ES2021.String"
+          "ES2022.String"
         ]
-    }
+    },
+   "include": ["src"]
 }

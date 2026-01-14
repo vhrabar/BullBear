@@ -1,5 +1,6 @@
 import { useState } from "react";
 import TradeDialog from "./TradeDialog.tsx";
+import type { EarningsReport, Dividend } from "../types/stocks";
 
 
 import "../styles/StockPanel.css";

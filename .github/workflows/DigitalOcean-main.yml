@@ -35,6 +35,7 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
           PRODUCTION: ${{ secrets.PRODUCTION }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
         run: |
           ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << EOF
           cd /root/bullbear/src/backend

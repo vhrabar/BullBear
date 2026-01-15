@@ -22,7 +22,8 @@ class OrderViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOrderOwner]
 
     def get_queryset(self) -> QuerySet[Order]:
-        profile = self.request.user.userprofile
+        profile = self.request.user.profile
+
         return (
             Order.objects
             .filter(user=profile)
@@ -35,8 +36,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         POST /orders/
         """
-        profile = self.request.user.userprofile
-        serializer.save(user=profile)
+        serializer.save(user=self.request.user.profile)
 
     def perform_update(self, serializer):
         """
@@ -124,7 +124,7 @@ class OrderEventViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self) -> QuerySet[OrderEvent]:
-        profile = self.request.user.userprofile
+        profile = self.request.user.profile
         return (
             OrderEvent.objects
             .filter(order__user=profile)

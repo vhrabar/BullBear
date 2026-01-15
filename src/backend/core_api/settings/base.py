@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 import os
@@ -27,7 +28,7 @@ INSTALLED_APPS = [
     'api.main',
     'api.users',
     'api.trading',
-    'api.orders'
+    'api.orders',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -75,19 +76,32 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = 'core_api.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '25060'),
-        'OPTIONS': {
-            'sslmode': os.getenv('DB_SSLMODE', 'require'),
-        },
+if 'test' in sys.argv:
+    print("Using test database settings")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'bullbear_local_test',
+            'USER': 'bullbear_tests',
+            'PASSWORD': 'password',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT', '25060'),
+            'OPTIONS': {
+                'sslmode': os.getenv('DB_SSLMODE', 'require'),
+            },
+        }
+    }
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

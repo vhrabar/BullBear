@@ -6,8 +6,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt && pip install dj-rest-auth
 
 COPY . .
+
+RUN python manage.py collectstatic --noinput
 
 CMD ["gunicorn", "core_api.wsgi:application", "--bind", "0.0.0.0:8000"]

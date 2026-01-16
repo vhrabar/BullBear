@@ -1,8 +1,9 @@
 import React from "react";
+import {MICROSOFT_OAUTH_URL} from "../config.ts";
 
 const MicrosftOAuthButton: React.FC = () => {
   const handleLogin = () => {
-      window.location.href = "https://api.bull-bear.app/auth/microsoft/login/";
+      window.location.href = MICROSOFT_OAUTH_URL
     };
 
   return (

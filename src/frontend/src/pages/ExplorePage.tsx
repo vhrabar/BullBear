@@ -1,6 +1,6 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import "./ExplorePage.css";
+import "../styles/ExplorePage.css";
 
 interface InstrumentItem {
     id: number;

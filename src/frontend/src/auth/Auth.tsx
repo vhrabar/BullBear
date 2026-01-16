@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("https://api.bull-bear.app/api/auth/user", { credentials: "include" })
+    fetch("/api/auth/user", { credentials: "include" })
       .then(res => (res.ok ? res.json() : null))
       .then(data => {
         setUser(data);

@@ -35,10 +35,15 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_SSLMODE: ${{ secrets.DB_SSLMODE }}
           PRODUCTION: ${{ secrets.PRODUCTION }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          DJANGO_SERVICE_TOKEN: ${{ secrets.DJANGO_SERVICE_TOKEN }}
         run: |
           ssh -i ~/.ssh/id_rsa root@${{ secrets.DO_DROPLET_IP }} << EOF
           cd /root/bullbear/src/backend
           echo -e "DB_NAME=${DB_NAME}\nDB_USER=${DB_USER}\nDB_PASSWORD=${DB_PASSWORD}\nDB_HOST${DB_HOST}\nDB_PORT=${DB_PORT}\nDB_SSLMODE=${DB_SSLMODE}\nPRODUCTION=${PRODUCTION}" > .env
+          cd /root/bullbear/src/scheduler
+          echo -e "MASSIVE_API_KEY=${MASSIVE_API_KEY}\nDB_NAME=${DB_NAME}\nDB_USER=${DB_USER}\nDB_PASSWORD=${DB_PASSWORD}\nDB_HOST${DB_HOST}\nDB_PORT=${DB_PORT}\nDB_SSLMODE=${DB_SSLMODE}\nPRODUCTION=${PRODUCTION}\nDJANGO_SERVICE_TOKEN=${DJANGO_SERVICE_TOKEN}\nDJANGO_API_BASE_URL=https://api.bull-bear.app" > .env
+
 
 
       - name: Rebuild and restart Docker

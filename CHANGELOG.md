@@ -13,6 +13,41 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - instrument search
 - initial version of trading simulator
 
+## [0.2.0] - 2025-12-11
+### Added
+- stock candles / quotes ingestion service
+
+## [0.2.1] - 2026-01-06
+### Fixed
+- bug in stock candles ingestion service causing data gaps
+
+### Changed
+- replaced 1min candles with 10min aggregated candles for performance improvement
+
+## [0.3.0] - 2026-01-09
+### Added
+- candle graphs in dashboard
+- news section
+- dividend / earnings calendar
+
+## [0.4.0] - 2026-01-13
+### Changed
+- redesigned landing page
+
+### Added
+- docs section
+- licence section
+- pricing section
+- contact form
+- FAQ section
+
+## [0.5.0] - 2026-01-15
+### Added
+- background service for handling orders
+- new order form with enhanced options
+- order history section in dashboard
+- order status tracking
+
 
 
 

@@ -21,3 +21,16 @@ def create_user_profile_and_portfolio(sender, instance, created, **kwargs):
             name=f"{instance.username}'s Portfolio",
             balance=10000.00
         )
+
+        # create user's portfolio snapshot model
+        UserPortfolioSnapshot = apps.get_model('users', 'PortfolioSnapshot')
+        UserPortfolioSnapshot.objects.create(
+            portfolio=UserPortfolio.objects.get(user=profile),
+            ts=instance.date_joined,
+            cash_balance=10000.00,
+            equity_value=10000.00,
+            total_value=10000.00,
+            unrealized_pl=0.00,
+            unrealized_pl_pct=0.00
+        )
+

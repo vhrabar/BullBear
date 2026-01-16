@@ -2,8 +2,12 @@ from rest_framework import viewsets, request, status
 from rest_framework.response import Response
 
 from .models import UserPortfolio, UserProfile, ContactMessage
-from .serializers import UserPortofolioSerializer, UserProfileSerializer, ContactDefaultsSerializer, \
-    ContactMessageSerializer
+from .serializers import (
+    UserPortofolioSerializer,
+    UserProfileSerializer,
+    ContactDefaultsSerializer,
+    ContactMessageSerializer,
+)
 from rest_framework import permissions
 
 

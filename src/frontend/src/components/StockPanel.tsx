@@ -5,6 +5,8 @@ import type { EarningsReport, Dividend } from "../types/stocks";
 
 import "../styles/StockPanel.css";
 import StockChart from "./StockChart.tsx";
+import TransactionHistory from "./TransactionHistory";
+
 
 interface Instrument {
   symbol: string;
@@ -72,6 +74,8 @@ function StockPanel({ stock, holding, latest, news, earnings, dividends }: Stock
     const ticker = stock.symbol;
     const company = stock.name;
     const [tradeType, setTradeType] = useState<"buy" | "sell" | null>(null);
+    const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
 
 
 
@@ -220,10 +224,7 @@ function StockPanel({ stock, holding, latest, news, earnings, dividends }: Stock
 
             <div className="stock-panel-bottom">
                 <section className="panel-section">
-                    <h3>Transaction History</h3>
-                    <div className="history-placeholder">
-                        No history implemented yet.
-                    </div>
+                    <TransactionHistory symbol={ticker} refreshKey={historyRefreshKey} />
                 </section>
 
                 <section className="panel-section">
@@ -251,7 +252,7 @@ function StockPanel({ stock, holding, latest, news, earnings, dividends }: Stock
                 price={Number(latest.last_price || latest.ask_price || latest.close_price)}
                 onClose={() => setTradeType(null)}
                 onSuccess={() => {
-                    console.log("Trade completed successfully.");
+                    setHistoryRefreshKey((k) => k + 1);
                 }}
             />
         )}

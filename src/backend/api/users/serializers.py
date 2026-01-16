@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import UserPortfolio, UserProfile, ContactMessage
+from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
 
 
 class UserPortofolioSerializer(serializers.ModelSerializer):
@@ -43,3 +43,21 @@ class ContactMessageSerializer(serializers.ModelSerializer):
         if len(value) < 1:
             raise serializers.ValidationError("Message is too short.")
         return value
+
+
+class PortfolioSnapshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioSnapshot
+        fields = (
+            "id",
+            "portfolio",
+            "ts",
+            "cash_balance",
+            "equity_value",
+            "total_value",
+            "unrealized_pl",
+            "unrealized_pl_pct",
+            "realized_pl",
+            "realized_pl_pct",
+        )
+        read_only_fields = ("id",)

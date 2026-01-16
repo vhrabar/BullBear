@@ -1,12 +1,16 @@
+from django.utils.dateparse import parse_datetime
 from rest_framework import viewsets, request, status
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import UserPortfolio, UserProfile, ContactMessage
+from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
 from .serializers import (
     UserPortofolioSerializer,
     UserProfileSerializer,
     ContactDefaultsSerializer,
-    ContactMessageSerializer,
+    ContactMessageSerializer, PortfolioSnapshotSerializer,
 )
 from rest_framework import permissions
 
@@ -71,3 +75,115 @@ class ContactViewSet(viewsets.ViewSet):
             {"detail": "Message received.", "id": msg.id},
             status=status.HTTP_201_CREATED,
         )
+
+class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
+    """
+    - portfolio=<id>
+    - from=<iso datetime>
+    - to=<iso datetime>
+    - order=asc|desc
+    - limit=<int>
+    """
+    serializer_class = PortfolioSnapshotSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if not hasattr(user, "profile"):
+            return PortfolioSnapshot.objects.none()
+
+        qs = PortfolioSnapshot.objects.filter(portfolio__user=user.profile)
+
+        portfolio_id = self.request.query_params.get("portfolio")
+        if portfolio_id:
+            qs = qs.filter(portfolio_id=portfolio_id)
+
+        dt_from = self.request.query_params.get("from")
+        if dt_from:
+            parsed = parse_datetime(dt_from)
+            if parsed:
+                qs = qs.filter(ts__gte=parsed)
+
+        dt_to = self.request.query_params.get("to")
+        if dt_to:
+            parsed = parse_datetime(dt_to)
+            if parsed:
+                qs = qs.filter(ts__lte=parsed)
+
+        order = self.request.query_params.get("order", "asc").lower()
+        if order == "desc":
+            qs = qs.order_by("-ts")
+        else:
+            qs = qs.order_by("ts")
+
+        limit = self.request.query_params.get("limit")
+        if limit:
+            try:
+                limit = max(1, min(int(limit), 5000))
+                qs = qs[:limit]
+            except ValueError:
+                pass
+
+        return qs.select_related("portfolio")
+
+    def perform_create(self, serializer):
+        """
+        POST /api/trading/snapshots/
+        Only allow creating snapshots for portfolios owned by the user.
+        """
+        user = self.request.user
+        if not hasattr(user, "profile"):
+            raise PermissionDenied("Profile missing.")
+
+        portfolio: UserPortfolio = serializer.validated_data["portfolio"]
+        if portfolio.user_id != user.profile.id:
+            raise PermissionDenied("You do not own this portfolio.")
+
+        serializer.save()
+
+    def perform_update(self, serializer):
+        """
+        PUT /api/trading/snapshots/{id}/
+        Only allow updating snapshots for portfolios owned by the user.
+        """
+        user = self.request.user
+        if not hasattr(user, "profile"):
+            raise PermissionDenied("Profile missing.")
+
+        portfolio: UserPortfolio = serializer.validated_data.get("portfolio", serializer.instance.portfolio)
+        if portfolio.user_id != user.profile.id:
+            raise PermissionDenied("You do not own this portfolio.")
+
+        serializer.save()
+
+    @action(detail=False, methods=["GET"], url_path="latest")
+    def latest(self, request):
+        """
+        GET /api/trading/snapshots/latest/?portfolio=<id>
+        Get latest snapshot for a portfolio.
+        """
+        user = request.user
+        if not hasattr(user, "profile"):
+            raise PermissionDenied("Profile missing.")
+
+        portfolio_id = request.query_params.get("portfolio")
+        if not portfolio_id:
+            return Response({"detail": "Missing required query param: portfolio"}, status=400)
+
+        try:
+            portfolio_id = int(portfolio_id)
+        except ValueError:
+            return Response({"detail": "Invalid portfolio id"}, status=400)
+
+        snap = (
+            PortfolioSnapshot.objects
+            .filter(portfolio_id=portfolio_id, portfolio__user=user.profile)
+            .order_by("-ts")
+            .first()
+        )
+
+        if not snap:
+            return Response({"detail": "No snapshots found."}, status=404)
+
+        return Response(self.get_serializer(snap).data)

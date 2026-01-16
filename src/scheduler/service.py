@@ -3,6 +3,8 @@ from typing import Dict, List
 from massive.websocket.models import EquityAgg
 from configuration import settings
 from repo import MarketDataRepository
+from execution_service import OrderExecutionService
+
 
 
 class MinuteAggregateIngestionService:
@@ -15,6 +17,7 @@ class MinuteAggregateIngestionService:
     def __init__(self):
         self.repo = MarketDataRepository()
         self.instrument_map = self.repo.load_instrument_map()
+        self.execution = OrderExecutionService()
 
         # in-memory aggregation store
         # key: (instrument_id, bucket_start)
@@ -47,6 +50,7 @@ class MinuteAggregateIngestionService:
                 self._update_bucket(self.buckets[key], m)
 
             self._flush_completed_buckets(now=start)
+        self.execution.run_once()
 
     def _create_bucket(self, key, instrument_id, bucket_start, bucket_end, m):
         self.buckets[key] = {

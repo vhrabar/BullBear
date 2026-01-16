@@ -16,7 +16,7 @@ const AppRouter: React.FC = () => {
 
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-
+        
         <Route
           path="/positions"
           element={
@@ -27,7 +27,18 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           }
         />
-
+        
+        <Route
+          path="/csv"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <CsvTrade />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        
         <Route
           path="/quote/:symbol"
           element={

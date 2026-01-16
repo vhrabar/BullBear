@@ -19,7 +19,7 @@ class Settings:
 
     TEST_MODE: bool = os.getenv("TESTING", "false").lower() == "true"
 
-    DJANGO_API_BASE_URL = "https://api.bull-bear.app"
+    DJANGO_API_BASE_URL = os.getenv("DJANGO_API_BASE_URL")
     DJANGO_SERVICE_TOKEN = os.getenv("DJANGO_SERVICE_TOKEN")
 
     def __post_init__(self):

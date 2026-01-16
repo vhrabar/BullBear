@@ -23,6 +23,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsOrderOwner]
+    filterset_fields = ["status", "instrument__symbol"]
 
     def get_queryset(self) -> QuerySet[Order]:
         profile = self.request.user.profile

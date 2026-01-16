@@ -12,7 +12,7 @@ class OrderFillSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = OrderFill
-        fields = ("id", "order", "quantity", "price", "fee", "executed_at", "created_at")
+        fields = ("id", "order", "quantity", "price", "executed_at", "created_at")
         read_only_fields = fields
 
 

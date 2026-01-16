@@ -5,7 +5,7 @@ from massive.websocket.models import EquityAgg
 from configuration import settings
 from repo import MarketDataRepository
 from execution_service import OrderExecutionService
-from src.scheduler.execution_engine import ExecutionEngine
+from execution_engine import ExecutionEngine
 
 
 class MinuteAggregateIngestionService:

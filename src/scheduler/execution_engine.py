@@ -14,6 +14,7 @@ class ExecutionEngine:
 
     def __init__(self):
         self.client = DjangoOrdersClient()
+        print("ExecutionEngine initialized")
 
     def run_once(self, prices: Dict[str, Decimal]):
 
@@ -30,6 +31,7 @@ class ExecutionEngine:
 
             if self.should_execute(o, px):
                 self.client.execute_order(o["id"])
+                print(f"Executed order {o['id']} at price {px}")
 
     @staticmethod
     def should_execute(order: dict, price: Decimal) -> bool:

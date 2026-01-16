@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Dict, List
 from massive.websocket.models import EquityAgg
 from configuration import settings
 from repo import MarketDataRepository
 from execution_service import OrderExecutionService
-
+from src.scheduler.execution_engine import ExecutionEngine
 
 
 class MinuteAggregateIngestionService:
@@ -23,10 +24,18 @@ class MinuteAggregateIngestionService:
         # key: (instrument_id, bucket_start)
         self.buckets: Dict[tuple[int, datetime], dict] = {}
 
+        # executor helpper
+        self.latest_prices = {}
+        self.engine = ExecutionEngine()
+
     def handle_messages(self, messages: List[EquityAgg]):
+        hasBeenChanged = False
+
         for m in messages:
             if m.event_type != "AM":
                 continue
+            self.latest_prices[m.symbol.upper()] = Decimal(str(m.close))
+            touched = True
 
             instrument_id = self.map_symbol_to_id(m.symbol)
             if instrument_id < 0:
@@ -50,7 +59,8 @@ class MinuteAggregateIngestionService:
                 self._update_bucket(self.buckets[key], m)
 
             self._flush_completed_buckets(now=start)
-        self.execution.run_once()
+        if hasBeenChanged:
+            self.engine.run_once(self.latest_prices)
 
     def _create_bucket(self, key, instrument_id, bucket_start, bucket_end, m):
         self.buckets[key] = {

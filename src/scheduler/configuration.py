@@ -19,6 +19,9 @@ class Settings:
 
     TEST_MODE: bool = os.getenv("TESTING", "false").lower() == "true"
 
+    DJANGO_API_BASE_URL = "https://api.bull-bear.app"
+    DJANGO_SERVICE_TOKEN = os.getenv("DJANGO_SERVICE_TOKEN")
+
     def __post_init__(self):
         self.DB_URL = (
             f"postgresql+psycopg2://{self.DB_USER}:"

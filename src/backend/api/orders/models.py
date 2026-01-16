@@ -187,6 +187,35 @@ class Order(models.Model):
 
         self.revision += 1
 
+    from decimal import Decimal
+
+    def is_executable_at_price(self, price: Decimal) -> bool:
+        """
+        Determines whether this order should execute at current market price.
+        """
+        if self.order_type == self.OrderType.MARKET:
+            return True
+
+        if self.order_type == self.OrderType.LIMIT:
+            if self.limit_price is None:
+                return False
+            return price <= self.limit_price if self.side == self.Side.BUY else price >= self.limit_price
+
+        if self.order_type == self.OrderType.STOP:
+            if self.stop_price is None:
+                return False
+            return price >= self.stop_price if self.side == self.Side.BUY else price <= self.stop_price
+
+        if self.order_type == self.OrderType.STOP_LIMIT:
+            if self.stop_price is None or self.limit_price is None:
+                return False
+            triggered = price >= self.stop_price if self.side == self.Side.BUY else price <= self.stop_price
+            if not triggered:
+                return False
+            return price <= self.limit_price if self.side == self.Side.BUY else price >= self.limit_price
+
+        return False
+
 
 class OrderFill(models.Model):
     """

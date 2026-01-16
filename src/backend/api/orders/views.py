@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db.models import QuerySet
 from django.utils import timezone
 
@@ -10,7 +12,8 @@ from rest_framework.response import Response
 
 from .models import Order, OrderFill, OrderEvent
 from .serializers import OrderSerializer, OrderFillSerializer, OrderEventSerializer
-from .permissions import IsOrderOwner
+from .permissions import IsOrderOwner, IsServiceExecutor
+from api.trading.models import InstrumentQuote
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -97,6 +100,76 @@ class OrderViewSet(viewsets.ModelViewSet):
         OrderEvent.objects.create(order=order, type=OrderEvent.EventType.CANCELLED, message=order.cancel_reason)
 
         return Response(OrderSerializer(order, context={"request": request}).data)
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="open",
+        permission_classes=[IsServiceExecutor],
+    )
+    def open_orders(self, request):
+        """
+        Service endpoint:
+        GET /api/orders/orders/open/
+        Returns OPEN + PARTIALLY_FILLED orders for execution engine.
+        """
+        qs = (
+            Order.objects
+            .filter(status__in=[Order.Status.OPEN, Order.Status.PARTIALLY_FILLED])
+            .select_related("instrument", "portfolio", "user")
+            .order_by("placed_at")
+        )
+
+        data = OrderSerializer(qs, many=True, context={"request": request}).data
+        return Response(data)
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="execute",
+        permission_classes=[IsServiceExecutor],
+    )
+    def execute(self, request, pk=None):
+        """
+        Service endpoint:
+        POST /api/orders/orders/{id}/execute/
+        Executes ONE order if its condition matches market price.
+        """
+        order: Order = Order.objects.select_related("instrument", "portfolio").get(pk=pk)
+
+        if order.status not in {Order.Status.OPEN, Order.Status.PARTIALLY_FILLED}:
+            return Response({"detail": "Order not executable."}, status=status.HTTP_400_BAD_REQUEST)
+
+        quote = InstrumentQuote.objects.filter(instrument=order.instrument.symbol).first()
+        if not quote:
+            return Response({"detail": "No quote available."}, status=status.HTTP_409_CONFLICT)
+
+        current_price = Decimal(str(quote.last_price))
+
+        if not order.is_executable_at_price(current_price):
+            return Response({"detail": "Order conditions not met."}, status=status.HTTP_409_CONFLICT)
+
+        fill_qty = order.remaining_quantity
+        if fill_qty <= 0:
+            return Response({"detail": "No remaining quantity."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        OrderFill.objects.create(
+            order=order,
+            quantity=fill_qty,
+            price=current_price,
+            executed_at=timezone.now(),
+        )
+        OrderEvent.objects.create(
+            order=order,
+            type=OrderEvent.EventType.FILL,
+            message=f"Filled {fill_qty} @ {current_price}",
+        )
+
+        order.apply_fill(fill_qty, current_price)
+        order.save()
+
+        return Response({"detail": "Executed", "order_id": order.id})
 
 
 class OrderFillViewSet(viewsets.ReadOnlyModelViewSet):

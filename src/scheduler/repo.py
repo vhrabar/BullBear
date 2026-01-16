@@ -4,10 +4,17 @@ from typing import Any
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import sessionmaker, InstrumentedAttribute
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
-from orm_model import InstrumentQuote, InstrumentIntervalData, Instrument
-from orm_model import Order as ORMOrder, OrderFill as ORMOrderFill, InstrumentQuote, Instrument
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+
+from orm_model import (
+    InstrumentQuote,
+    InstrumentIntervalData,
+    Instrument,
+    Order as ORMOrder,
+    OrderFill as ORMOrderFill,
+)
 
 from configuration import settings
 
@@ -20,40 +27,88 @@ class MarketDataRepository:
     @staticmethod
     def load_instrument_map() -> dict[Any, InstrumentedAttribute[int]]:
         with SessionLocal() as session:
-            rows = session.query(Instrument).filter(Instrument.is_active == True).all()
+            rows = session.query(Instrument).filter(Instrument.is_active.is_(True)).all()
             return {row.symbol.upper(): row.id for row in rows}
 
     @staticmethod
     def upsert_quote(payload: dict):
         try:
             with SessionLocal() as session:
+                if "instrument_id" not in payload:
+                    if "instrument" in payload:
+                        sym = payload.pop("instrument")
+                        inst = session.query(Instrument).filter(Instrument.symbol == sym.upper()).one_or_none()
+                        if inst is None:
+                            raise ValueError(f"Unknown instrument symbol '{sym}'")
+                        payload["instrument_id"] = inst.id
+                    else:
+                        raise ValueError(
+                            "InstrumentQuote expects FK field 'instrument_id' in payload. "
+                            "Provide 'instrument_id' or an 'instrument' symbol."
+                        )
+
+                conflict_keys = {"instrument_id"}
+                update_payload = {k: v for k, v in payload.items() if k not in conflict_keys}
+
                 stmt = insert(InstrumentQuote).values(payload)
                 stmt = stmt.on_conflict_do_update(
-                    index_elements=["instrument"],
-                    set_=payload
+                    index_elements=["instrument_id"],
+                    set_=update_payload
                 )
 
                 session.execute(stmt)
                 session.commit()
 
-        except SQLAlchemyError as exc:
+        except (SQLAlchemyError, Exception) as exc:
             print("\n[ERROR] Quote UPSERT failed.")
             print("[PAYLOAD]:", payload)
             print(type(exc).__name__, str(exc))
             traceback.print_exc()
 
-
     @staticmethod
     def upsert_candle(payload: dict):
         try:
+            print("[upsert_candle] called with payload:", payload)
             with SessionLocal() as session:
+                conflict_keys = {"instrument_id", "start_time"}
+                update_payload = {k: v for k, v in payload.items() if k not in conflict_keys}
+
+                # Upsert interval data (InstrumentIntervalData)
                 stmt = insert(InstrumentIntervalData).values(payload)
                 stmt = stmt.on_conflict_do_update(
                     index_elements=["instrument_id", "start_time"],
-                    set_=payload
+                    set_=update_payload
                 )
+                res = session.execute(stmt)
+                print(f"[upsert_candle] interval upsert executed, result rowcount={getattr(res, 'rowcount', None)}")
 
-                session.execute(stmt)
+                close_price = payload.get("close_price")
+                if close_price is not None:
+                    now = datetime.now(tz=timezone.utc)
+                    quote_payload = {
+                        "instrument_id": payload["instrument_id"],
+                        "bid_price": close_price,
+                        "bid_size": 0,
+                        "ask_price": close_price,
+                        "ask_size": 0,
+                        "last_price": close_price,
+                        "currency": payload.get("currency", "USD"),
+                        "exchange": payload.get("exchange", ""),
+                        "market_state": payload.get("market_state", ""),
+                        "daily_change": payload.get("daily_change", 0),
+                        "daily_change_percent": payload.get("daily_change_percent", 0),
+                        "timestamp": payload.get("end_time") or payload.get("updated_at") or now,
+                        "updated_at": payload.get("updated_at") or now,
+                    }
+
+                    q_update = {k: v for k, v in quote_payload.items() if k != "instrument_id"}
+                    stmt2 = insert(InstrumentQuote).values(quote_payload)
+                    stmt2 = stmt2.on_conflict_do_update(
+                        index_elements=["instrument_id"],
+                        set_=q_update,
+                    )
+                    res2 = session.execute(stmt2)
+
                 session.commit()
 
         except SQLAlchemyError as exc:
@@ -61,7 +116,11 @@ class MarketDataRepository:
             print("[PAYLOAD]:", payload)
             print(type(exc).__name__, str(exc))
             traceback.print_exc()
-
+        except Exception as exc:
+            print("\n[ERROR] Candle UPSERT unexpected error.")
+            print("[PAYLOAD]:", payload)
+            print(type(exc).__name__, str(exc))
+            traceback.print_exc()
 
     @staticmethod
     def load_open_orders():
@@ -76,10 +135,17 @@ class MarketDataRepository:
     def get_latest_prices_for_instruments(symbols: list[str]) -> dict[str, float]:
         if not symbols:
             return {}
+
+        symbols = [s.upper() for s in symbols]
+
         with SessionLocal() as session:
-            stmt = select(InstrumentQuote).where(InstrumentQuote.instrument.in_(symbols))
-            rows = session.execute(stmt).scalars().all()
-            return {r.instrument.upper(): float(r.last_price) for r in rows}
+            stmt = (
+                select(Instrument.symbol, InstrumentQuote.last_price)
+                .join(InstrumentQuote, InstrumentQuote.instrument_id == Instrument.id)
+                .where(Instrument.symbol.in_(symbols))
+            )
+            rows = session.execute(stmt).all()
+            return {symbol.upper(): float(last_price) for symbol, last_price in rows}
 
     @staticmethod
     def create_fill_and_update_order(order_id: int, fill_qty, fill_price):

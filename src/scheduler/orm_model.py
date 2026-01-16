@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy.orm import declarative_base, mapped_column, Mapped
+from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
 from sqlalchemy import (
     Integer, String, DateTime, Numeric, BigInteger,
     ForeignKey, UniqueConstraint, Index, Boolean, DECIMAL
@@ -15,7 +15,13 @@ class InstrumentQuote(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    instrument: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    instrument_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("trading_instrument.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
 
     bid_price: Mapped[float] = mapped_column(Numeric(12, 6), nullable=False)
     bid_size: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

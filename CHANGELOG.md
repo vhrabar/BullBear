@@ -41,6 +41,13 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - contact form
 - FAQ section
 
+## [0.5.0] - 2026-01-15
+### Added
+- background service for handling orders
+- new order form with enhanced options
+- order history section in dashboard
+- order status tracking
+
 
 
 

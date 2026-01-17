@@ -1,8 +1,14 @@
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models import F
 from django.utils.dateparse import parse_datetime
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework import permissions
+
 
 from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
 from .serializers import (
@@ -13,7 +19,6 @@ from .serializers import (
     PortfolioSnapshotSerializer,
 )
 from ..orders.permissions import IsServiceExecutor
-from rest_framework import permissions
 
 
 class UserPortfolioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -86,7 +91,7 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
     - limit=<int>
     """
     serializer_class = PortfolioSnapshotSerializer
-    permission_classes = [IsServiceExecutor]
+    permission_classes = [permissions.IsAuthenticated | IsServiceExecutor]
 
     def get_queryset(self):
         user = self.request.user
@@ -192,3 +197,84 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
             return Response({"detail": "No snapshots found."}, status=404)
 
         return Response(self.get_serializer(snap).data)
+
+    @action(detail=False, methods=["GET"], url_path="chart")
+    def chart(self, request):
+        """
+        GET /api/trading/snapshots/chart/?portfolio=<id>&range=1D&interval=10m
+        Returns downsampled points for charts.
+        """
+        user = request.user
+        if not hasattr(user, "profile"):
+            raise PermissionDenied("Profile missing.")
+
+        portfolio_id = request.query_params.get("portfolio")
+        if not portfolio_id:
+            return Response({"detail": "Missing required query param: portfolio"}, status=400)
+
+        try:
+            portfolio_id = int(portfolio_id)
+        except ValueError:
+            return Response({"detail": "Invalid portfolio id"}, status=400)
+
+        range_code = request.query_params.get("range", "1D")
+        interval = request.query_params.get("interval", "10m")
+
+        now = timezone.now()
+
+        # range -> start time
+        if range_code == "1D":
+            start = now - timedelta(days=1)
+        elif range_code == "1W":
+            start = now - timedelta(days=7)
+        elif range_code == "1M":
+            start = now - timedelta(days=30)
+        elif range_code == "3M":
+            start = now - timedelta(days=90)
+        elif range_code == "1Y":
+            start = now - timedelta(days=365)
+        else:
+            return Response({"detail": "Invalid range. Use 1D/1W/1M/3M/1Y"}, status=400)
+
+        # base queryset
+        qs = (
+            PortfolioSnapshot.objects
+            .filter(portfolio_id=portfolio_id, portfolio__user=user.profile, ts__gte=start, ts__lte=now)
+            .order_by("ts")
+        )
+
+        # downsampling step
+        if interval == "10m":
+            step = 1
+        elif interval == "1h":
+            step = 6
+        elif interval == "1d":
+            step = 144
+        else:
+            return Response({"detail": "Invalid interval. Use 10m/1h/1d"}, status=400)
+
+        # fetch and downsample
+        rows = list(
+            qs.values(
+                "ts",
+                "cash_balance",
+                "equity_value",
+                "total_value",
+                "unrealized_pl",
+                "unrealized_pl_pct",
+                "realized_pl",
+                "realized_pl_pct",
+            )
+        )
+
+        if step > 1:
+            rows = rows[::step]
+
+        return Response({
+            "portfolio_id": portfolio_id,
+            "range": range_code,
+            "interval": interval,
+            "count": len(rows),
+            "points": rows,
+        })
+

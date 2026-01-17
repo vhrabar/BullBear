@@ -1,8 +1,7 @@
 from django.utils.dateparse import parse_datetime
-from rest_framework import viewsets, request, status
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
@@ -10,8 +9,10 @@ from .serializers import (
     UserPortofolioSerializer,
     UserProfileSerializer,
     ContactDefaultsSerializer,
-    ContactMessageSerializer, PortfolioSnapshotSerializer,
+    ContactMessageSerializer,
+    PortfolioSnapshotSerializer,
 )
+from ..orders.permissions import IsServiceExecutor
 from rest_framework import permissions
 
 
@@ -85,7 +86,7 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
     - limit=<int>
     """
     serializer_class = PortfolioSnapshotSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsServiceExecutor]
 
     def get_queryset(self):
         user = self.request.user
@@ -133,12 +134,14 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         Only allow creating snapshots for portfolios owned by the user.
         """
         user = self.request.user
-        if not hasattr(user, "profile"):
-            raise PermissionDenied("Profile missing.")
+        # Allow executor service to post snapshots for any portfolio
+        if not (user.username == "executor" and user.is_staff and user.is_superuser):
+            if not hasattr(user, "profile"):
+                raise PermissionDenied("Profile missing.")
 
-        portfolio: UserPortfolio = serializer.validated_data["portfolio"]
-        if portfolio.user_id != user.profile.id:
-            raise PermissionDenied("You do not own this portfolio.")
+            portfolio: UserPortfolio = serializer.validated_data["portfolio"]
+            if portfolio.user_id != user.profile.id:
+                raise PermissionDenied("You do not own this portfolio.")
 
         serializer.save()
 
@@ -148,12 +151,14 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         Only allow updating snapshots for portfolios owned by the user.
         """
         user = self.request.user
-        if not hasattr(user, "profile"):
-            raise PermissionDenied("Profile missing.")
+        # Allow executor service to update snapshots for any portfolio
+        if not (user.username == "executor" and user.is_staff and user.is_superuser):
+            if not hasattr(user, "profile"):
+                raise PermissionDenied("Profile missing.")
 
-        portfolio: UserPortfolio = serializer.validated_data.get("portfolio", serializer.instance.portfolio)
-        if portfolio.user_id != user.profile.id:
-            raise PermissionDenied("You do not own this portfolio.")
+            portfolio: UserPortfolio = serializer.validated_data.get("portfolio", serializer.instance.portfolio)
+            if portfolio.user_id != user.profile.id:
+                raise PermissionDenied("You do not own this portfolio.")
 
         serializer.save()
 

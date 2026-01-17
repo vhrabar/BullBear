@@ -49,7 +49,6 @@ class PortfolioSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = PortfolioSnapshot
         fields = (
-            "id",
             "portfolio",
             "ts",
             "cash_balance",

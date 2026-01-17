@@ -1,6 +1,3 @@
-# Disable language detection for the frontend directory
-src/frontend/** linguist-detectable=false
-
 # DOCs
 DOCs/** linguist-documentation
 *.md linguist-documentation

@@ -1,5 +1,6 @@
 import traceback
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import create_engine, select
@@ -13,7 +14,7 @@ from orm_model import (
     InstrumentIntervalData,
     Instrument,
     Order as ORMOrder,
-    OrderFill as ORMOrderFill,
+    OrderFill as ORMOrderFill, PortfolioHolding, UserPortfolio, PortfolioSnapshot,
 )
 
 from configuration import settings
@@ -109,6 +110,13 @@ class MarketDataRepository:
                     )
                     res2 = session.execute(stmt2)
 
+                # Create snapshots for portfolios affected by this instrument
+                MarketDataRepository.create_snapshots_for_instrument(
+                    session=session,
+                    instrument_id=payload["instrument_id"],
+                    ts= payload["end_time"]
+                )
+
                 session.commit()
 
         except SQLAlchemyError as exc:
@@ -186,3 +194,86 @@ class MarketDataRepository:
             order.updated_at = now
 
             session.commit()
+
+    @staticmethod
+    def create_snapshots_for_instrument(session, instrument_id: int, ts: datetime):
+        """
+        Create snapshots for portfolios affected by instrument_id
+        at snapshot timestamp ts
+        """
+
+        # 1) Which portfolios are affected?
+        portfolio_ids = session.execute(
+            select(PortfolioHolding.portfolio_id)
+            .where(PortfolioHolding.instrument_id == instrument_id)
+            .distinct()
+        ).scalars().all()
+
+        if not portfolio_ids:
+            return
+
+        cash_rows = session.execute(
+            select(UserPortfolio.id, UserPortfolio.balance)
+            .where(UserPortfolio.id.in_(portfolio_ids))
+            .where(UserPortfolio.is_active.is_(True))
+        ).all()
+        cash_map = {pid: Decimal(bal) for pid, bal in cash_rows}
+
+        if not cash_map:
+            return
+
+        rows = session.execute(
+            select(
+                PortfolioHolding.portfolio_id,
+                PortfolioHolding.quantity,
+                PortfolioHolding.average_price,
+                InstrumentQuote.last_price,
+            )
+            .join(InstrumentQuote, InstrumentQuote.instrument_id == PortfolioHolding.instrument_id)
+            .where(PortfolioHolding.portfolio_id.in_(list(cash_map.keys())))
+        ).all()
+
+        agg = {}
+        for pid, qty, avg_price, last_price in rows:
+            pid = int(pid)
+            qty = Decimal(qty)
+            avg_price = Decimal(avg_price)
+            last_price = Decimal(last_price)
+
+            if pid not in agg:
+                agg[pid] = {"equity": Decimal("0"), "cost": Decimal("0"), "unrl": Decimal("0")}
+
+            agg[pid]["equity"] += qty * last_price
+            agg[pid]["cost"] += qty * avg_price
+            agg[pid]["unrl"] += qty * (last_price - avg_price)
+
+        for pid in cash_map.keys():
+            cash = cash_map[pid]
+            equity = agg.get(pid, {}).get("equity", Decimal("0"))
+            cost = agg.get(pid, {}).get("cost", Decimal("0"))
+            unrl = agg.get(pid, {}).get("unrl", Decimal("0"))
+
+            total = cash + equity
+
+            unrl_pct = Decimal("0")
+            if cost > 0:
+                unrl_pct = (unrl / cost) * Decimal("100")
+
+            payload = {
+                "portfolio_id": pid,
+                "ts": ts,
+                "cash_balance": cash.quantize(Decimal("0.01")),
+                "equity_value": equity.quantize(Decimal("0.01")),
+                "total_value": total.quantize(Decimal("0.01")),
+                "unrealized_pl": unrl.quantize(Decimal("0.01")),
+                "unrealized_pl_pct": unrl_pct.quantize(Decimal("0.0001")),
+                "realized_pl": Decimal("0.00"),
+                "realized_pl_pct": Decimal("0.0000"),
+            }
+
+            stmt = insert(PortfolioSnapshot).values(payload)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["portfolio_id", "ts"],
+                set_={k: v for k, v in payload.items() if k not in ("portfolio_id", "ts")}
+            )
+            session.execute(stmt)

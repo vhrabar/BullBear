@@ -62,16 +62,6 @@ function formatPct(n: number) {
   return `${sign}${n.toFixed(2)}%`;
 }
 
-// subtract range from date
-function subtractRange(now: Date, range: RangeCode): Date {
-  const d = new Date(now);
-  if (range === "1D") d.setDate(d.getDate() - 1);
-  if (range === "1W") d.setDate(d.getDate() - 7);
-  if (range === "1M") d.setDate(d.getDate() - 30);
-  if (range === "3M") d.setDate(d.getDate() - 90);
-  if (range === "1Y") d.setDate(d.getDate() - 365);
-  return d;
-}
 
 // get bucket size in ms
 function bucketMs(interval: IntervalCode): number {
@@ -195,7 +185,6 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-
 export default function PortfolioPerformancePanel({
   portfolioId,
   token,
@@ -220,14 +209,10 @@ export default function PortfolioPerformancePanel({
       setError(null);
 
       try {
-        const now = new Date();
-        const from = subtractRange(now, range);
-
         const url =
-          `api/users/snapshots/?portfolio=${portfolioId}` +
-          `&from=${encodeURIComponent(from.toISOString())}` +
-          `&to=${encodeURIComponent(now.toISOString())}` +
-          `&order=asc&limit=5000`;
+          `/api/users/snapshots/chart/?portfolio=${portfolioId}` +
+          `&range=${range}` +
+          `&interval=${interval}`;
 
         const res = await fetch(url, {
           method: "GET",
@@ -244,7 +229,8 @@ export default function PortfolioPerformancePanel({
           throw new Error(`HTTP ${res.status} ${txt}`);
         }
 
-        const points: PortfolioSnapshotPoint[] = await res.json();
+        const json = await res.json();
+        const points: PortfolioSnapshotPoint[] = json?.points ?? [];
         setRaw(Array.isArray(points) ? points : []);
       } catch (e: any) {
         if (e?.name !== "AbortError") {
@@ -257,7 +243,7 @@ export default function PortfolioPerformancePanel({
 
     load();
     return () => controller.abort();
-  }, [portfolioId, token, range]);
+  }, [portfolioId, token, range, interval]);
 
   // Base points sorted by timestamp
   const basePoints: ChartPoint[] = useMemo(() => {
@@ -266,21 +252,17 @@ export default function PortfolioPerformancePanel({
       .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime())
       .map((p) => ({
         ts: p.ts,
-        label: formatTsLabel(p.ts, "10m"),
+        label: formatTsLabel(p.ts, interval),
         cash: parseNum(p.cash_balance),
         equity: parseNum(p.equity_value),
         total: parseNum(p.total_value),
         unrealized: parseNum(p.unrealized_pl),
       }));
-  }, [raw]);
+  }, [raw, interval]);
 
   // Aggregate based on selected interval
   const data: ChartPoint[] = useMemo(() => {
-    const aggregated = aggregatePoints(basePoints, interval);
-    return aggregated.map((p) => ({
-      ...p,
-      label: formatTsLabel(p.ts, interval),
-    }));
+    return aggregatePoints(basePoints, interval);
   }, [basePoints, interval]);
 
   const latest = data.length ? data[data.length - 1] : null;
@@ -377,14 +359,7 @@ export default function PortfolioPerformancePanel({
                     <YAxis tick={{ fill: "#9ca3af", fontSize: 12 }} tickFormatter={(v) => formatMoney(v)} width={90} />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      name="Total"
-                      stroke="#60a5fa"
-                      strokeWidth={2}
-                      dot={false}
-                    />
+                    <Line type="monotone" dataKey="total" name="Total" stroke="#60a5fa" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -401,24 +376,8 @@ export default function PortfolioPerformancePanel({
                     <YAxis tick={{ fill: "#9ca3af", fontSize: 12 }} tickFormatter={(v) => formatMoney(v)} width={90} />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="cash"
-                      name="Cash"
-                      stackId="1"
-                      stroke="#22c55e"
-                      fill="#22c55e"
-                      fillOpacity={0.18}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="equity"
-                      name="Equity"
-                      stackId="1"
-                      stroke="#3b82f6"
-                      fill="#3b82f6"
-                      fillOpacity={0.18}
-                    />
+                    <Area type="monotone" dataKey="cash" name="Cash" stackId="1" stroke="#22c55e" fill="#22c55e" fillOpacity={0.18} />
+                    <Area type="monotone" dataKey="equity" name="Equity" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.18} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -435,14 +394,7 @@ export default function PortfolioPerformancePanel({
                     <YAxis tick={{ fill: "#9ca3af", fontSize: 12 }} tickFormatter={(v) => formatMoney(v)} width={90} />
                     <Tooltip content={<ChartTooltip />} />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="unrealized"
-                      name="Unrealized P/L"
-                      stroke="#eab308"
-                      strokeWidth={2}
-                      dot={false}
-                    />
+                    <Line type="monotone" dataKey="unrealized" name="Unrealized P/L" stroke="#eab308" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -454,51 +406,29 @@ export default function PortfolioPerformancePanel({
             <div className="panel-section">
               <h3>Latest</h3>
               <ul className="simple-list">
-                <li>
-                  Total Value: <strong>{formatMoney(latest?.total ?? 0)}</strong>
-                </li>
-                <li>
-                  Cash: <strong>{formatMoney(latest?.cash ?? 0)}</strong>
-                </li>
-                <li>
-                  Equity: <strong>{formatMoney(latest?.equity ?? 0)}</strong>
-                </li>
-                <li>
-                  Unrealized P/L: <strong>{formatMoney(latest?.unrealized ?? 0)}</strong>
-                </li>
+                <li>Total Value: <strong>{formatMoney(latest?.total ?? 0)}</strong></li>
+                <li>Cash: <strong>{formatMoney(latest?.cash ?? 0)}</strong></li>
+                <li>Equity: <strong>{formatMoney(latest?.equity ?? 0)}</strong></li>
+                <li>Unrealized P/L: <strong>{formatMoney(latest?.unrealized ?? 0)}</strong></li>
               </ul>
             </div>
 
             <div className="panel-section">
               <h3>Performance</h3>
               <ul className="simple-list">
-                <li>
-                  Start: <strong>{formatMoney(metrics?.start ?? 0)}</strong>
-                </li>
-                <li>
-                  End: <strong>{formatMoney(metrics?.end ?? 0)}</strong>
-                </li>
-                <li>
-                  Return: <strong>{formatPct(metrics?.returnPct ?? 0)}</strong>
-                </li>
-                <li>
-                  Max Drawdown: <strong>{formatPct(metrics?.maxDrawdownPct ?? 0)}</strong>
-                </li>
+                <li>Start: <strong>{formatMoney(metrics?.start ?? 0)}</strong></li>
+                <li>End: <strong>{formatMoney(metrics?.end ?? 0)}</strong></li>
+                <li>Return: <strong>{formatPct(metrics?.returnPct ?? 0)}</strong></li>
+                <li>Max Drawdown: <strong>{formatPct(metrics?.maxDrawdownPct ?? 0)}</strong></li>
               </ul>
             </div>
 
             <div className="panel-section">
               <h3>Data</h3>
               <ul className="simple-list">
-                <li>
-                  Range: <strong>{range}</strong>
-                </li>
-                <li>
-                  Interval: <strong>{interval}</strong>
-                </li>
-                <li>
-                  Points: <strong>{data.length}</strong>
-                </li>
+                <li>Range: <strong>{range}</strong></li>
+                <li>Interval: <strong>{interval}</strong></li>
+                <li>Points: <strong>{data.length}</strong></li>
               </ul>
             </div>
           </div>

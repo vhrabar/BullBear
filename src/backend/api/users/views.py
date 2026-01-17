@@ -1,6 +1,7 @@
 from datetime import timedelta
+from django.db.models.functions import TruncMinute, TruncDay, TruncHour
 from django.utils import timezone
-from django.db.models import F
+from django.db.models import Avg
 from django.utils.dateparse import parse_datetime
 
 from rest_framework import viewsets, status
@@ -202,7 +203,7 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
     def chart(self, request):
         """
         GET /api/trading/snapshots/chart/?portfolio=<id>&range=1D&interval=10m
-        Returns downsampled points for charts.
+        Returns downsampled + aggregated points for charts.
         """
         user = request.user
         if not hasattr(user, "profile"):
@@ -223,58 +224,72 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         now = timezone.now()
 
         # range -> start time
-        if range_code == "1D":
-            start = now - timedelta(days=1)
-        elif range_code == "1W":
-            start = now - timedelta(days=7)
-        elif range_code == "1M":
-            start = now - timedelta(days=30)
-        elif range_code == "3M":
-            start = now - timedelta(days=90)
-        elif range_code == "1Y":
-            start = now - timedelta(days=365)
-        else:
+        ranges = {
+            "1D": timedelta(days=1),
+            "1W": timedelta(days=7),
+            "1M": timedelta(days=30),
+            "3M": timedelta(days=90),
+            "1Y": timedelta(days=365),
+        }
+        if range_code not in ranges:
             return Response({"detail": "Invalid range. Use 1D/1W/1M/3M/1Y"}, status=400)
 
+        start = now - ranges[range_code]
+
         # base queryset
-        qs = (
-            PortfolioSnapshot.objects
-            .filter(portfolio_id=portfolio_id, portfolio__user=user.profile, ts__gte=start, ts__lte=now)
-            .order_by("ts")
+        qs = PortfolioSnapshot.objects.filter(
+            portfolio_id=portfolio_id,
+            portfolio__user=user.profile,
+            ts__gte=start,
+            ts__lte=now
         )
 
-        # downsampling step
+        # interval bucketing
         if interval == "10m":
-            step = 1
+            bucket_expr = TruncMinute("ts")
         elif interval == "1h":
-            step = 6
+            bucket_expr = TruncHour("ts")
         elif interval == "1d":
-            step = 144
+            bucket_expr = TruncDay("ts")
         else:
             return Response({"detail": "Invalid interval. Use 10m/1h/1d"}, status=400)
 
-        # fetch and downsample
+        # aggregate per bucket
         rows = list(
-            qs.values(
-                "ts",
-                "cash_balance",
-                "equity_value",
-                "total_value",
-                "unrealized_pl",
-                "unrealized_pl_pct",
-                "realized_pl",
-                "realized_pl_pct",
+            qs.annotate(bucket=bucket_expr)
+            .values("bucket")
+            .annotate(
+                cash_balance=Avg("cash_balance"),
+                equity_value=Avg("equity_value"),
+                total_value=Avg("total_value"),
+                unrealized_pl=Avg("unrealized_pl"),
+                unrealized_pl_pct=Avg("unrealized_pl_pct"),
+                realized_pl=Avg("realized_pl"),
+                realized_pl_pct=Avg("realized_pl_pct"),
             )
+            .order_by("bucket")
         )
 
-        if step > 1:
-            rows = rows[::step]
+        points = [
+            {
+                "ts": r["bucket"],
+                "cash_balance": r["cash_balance"],
+                "equity_value": r["equity_value"],
+                "total_value": r["total_value"],
+                "unrealized_pl": r["unrealized_pl"],
+                "unrealized_pl_pct": r["unrealized_pl_pct"],
+                "realized_pl": r["realized_pl"],
+                "realized_pl_pct": r["realized_pl_pct"],
+            }
+            for r in rows
+        ]
 
         return Response({
             "portfolio_id": portfolio_id,
             "range": range_code,
             "interval": interval,
-            "count": len(rows),
-            "points": rows,
+            "count": len(points),
+            "points": points,
         })
+
 

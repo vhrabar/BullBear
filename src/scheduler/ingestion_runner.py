@@ -35,7 +35,6 @@ def main():
     )
 
     client.subscribe(*get_subscribed_stocks())
-
     client.run(service.handle_messages)
 
 

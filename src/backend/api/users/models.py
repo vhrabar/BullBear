@@ -78,3 +78,26 @@ class ContactMessage(models.Model):
         return f"[{self.created_at:%Y-%m-%d %H:%M}] {self.email} - {self.subject}"
 
 
+class PortfolioSnapshot(models.Model):
+    portfolio = models.ForeignKey(UserPortfolio, on_delete=models.CASCADE, related_name="snapshots")
+    ts = models.DateTimeField(db_index=True)
+
+    cash_balance = models.DecimalField(max_digits=20, decimal_places=2, default=10000)
+    equity_value = models.DecimalField(max_digits=20, decimal_places=2, default=10000)
+    total_value = models.DecimalField(max_digits=20, decimal_places=2, default=10000)
+
+    unrealized_pl = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    unrealized_pl_pct = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+
+    realized_pl = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    realized_pl_pct = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+
+
+    class Meta:
+        unique_together = ("portfolio", "ts")
+        indexes = [
+            models.Index(fields=["portfolio", "ts"]),
+        ]
+
+
+

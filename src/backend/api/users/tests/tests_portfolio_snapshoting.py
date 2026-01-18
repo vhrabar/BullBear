@@ -17,16 +17,12 @@ User = get_user_model()
 @override_settings(ROOT_URLCONF="core_api.urls")
 class PortfolioSnapshotAPITests(APITestCase):
     """
-    Full integration tests for:
-    - GET /api/users/snapshots/
-    - GET /api/users/snapshots/latest/?portfolio=<id>
-    - POST /api/users/snapshots/
+     Tests GET/POST /api/users/snapshots/
     """
 
     def setUp(self):
-        # ----------------------
+        
         # Create normal users
-        # ----------------------
         self.user1 = User.objects.create_user(
             username="user1",
             password="pass12345",
@@ -38,29 +34,24 @@ class PortfolioSnapshotAPITests(APITestCase):
             email="user2@example.com",
         )
 
-        # ----------------------
+        
         # access profiles
-        # ----------------------
         self.profile1 = self.user1.profile
         self.profile2 = self.user2.profile
 
-        # ----------------------
+        
         # access  account portfolios
-        # ----------------------
         self.portfolio1 = self.profile1.portfolios.first()
 
         self.portfolio2 = self.profile2.portfolios.first()
 
-        # ----------------------
+        
         # delete initial snapshot created by signal on portfolio creation
-        # ----------------------
-
         PortfolioSnapshot.objects.filter(portfolio=self.portfolio1).delete()
         PortfolioSnapshot.objects.filter(portfolio=self.portfolio2).delete()
 
-        # ----------------------
+        
         # Create snapshots for portfolio1
-        # ----------------------
         now = timezone.now()
         self.t1 = now - timedelta(minutes=30)
         self.t2 = now - timedelta(minutes=20)
@@ -113,9 +104,8 @@ class PortfolioSnapshotAPITests(APITestCase):
             realized_pl_pct=Decimal("0.0000"),
         )
 
-        # ----------------------
+        
         # Create executor service user
-        # ----------------------
         self.executor = User.objects.create_user(
             username="executor",
             password="pass12345",

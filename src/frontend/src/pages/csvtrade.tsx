@@ -6,7 +6,7 @@ function CsvTrade() {
   const [uploadStatus, setUploadStatus] = useState<{ message: string; type: 'success' | 'error' | '' }>({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
 
-  // Dohvaćanje tokena iz localStorage-a
+
   const token = localStorage.getItem('token'); 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,7 @@ function CsvTrade() {
     formData.append('file', importFile);
 
     try {
-      // PROMIJENJENO: Samo /api/... kako je Vedran tražio
+    
       const response = await fetch('/api/users/import/', {
         method: 'POST',
         headers: {
@@ -58,7 +58,7 @@ function CsvTrade() {
 
   const handleExport = async () => {
     try {
-      // PROMIJENJENO: Samo /api/... kako je Vedran tražio
+     
       const response = await fetch('/api/users/export/', {
         method: 'GET',
         headers: {
@@ -158,3 +158,4 @@ function CsvTrade() {
 }
 
 export default CsvTrade;
+

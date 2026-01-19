@@ -6,7 +6,7 @@ function CsvTrade() {
   const [uploadStatus, setUploadStatus] = useState<{ message: string; type: 'success' | 'error' | '' }>({ message: '', type: '' });
   const [loading, setLoading] = useState(false);
 
-  
+  // Dohvaćanje tokena iz localStorage-a
   const token = localStorage.getItem('token'); 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,8 +33,8 @@ function CsvTrade() {
     formData.append('file', importFile);
 
     try {
-    
-      const response = await fetch('http://localhost:8000/api/users/import/', {
+      // PROMIJENJENO: Samo /api/... kako je Vedran tražio
+      const response = await fetch('/api/users/import/', {
         method: 'POST',
         headers: {
           'Authorization': `Token ${token}` 
@@ -58,8 +58,8 @@ function CsvTrade() {
 
   const handleExport = async () => {
     try {
-      
-      const response = await fetch('http://localhost:8000/api/users/export/', {
+      // PROMIJENJENO: Samo /api/... kako je Vedran tražio
+      const response = await fetch('/api/users/export/', {
         method: 'GET',
         headers: {
           'Authorization': `Token ${token}`
@@ -87,4 +87,74 @@ function CsvTrade() {
 
   return (
     <div className="csv-page">
-      <div className
+      <div className="csv-container">
+        <div className="csv-header">
+          <h1>Uvoz i izvoz transakcija</h1>
+          <p>Upravljajte transakcijama putem CSV datoteka sinkroniziranih s bazom</p>
+        </div>
+
+        <div className="csv-content">
+          <div className="csv-section">
+            <div className="section-icon">📥</div>
+            <h2>Uvezi transakcije</h2>
+            
+            <div className="csv-format-info">
+              <h3>Potreban format (Pandas schema):</h3>
+              <code>email,portfolio_name,instrument_symbol,type,quantity,price</code>
+              <p className="format-example">Primjer (buy/sell):</p>
+              <code className="example">
+                korisnik@email.com,MojPortfelj,AAPL,buy,10,185.50
+              </code>
+            </div>
+
+            <div className="upload-area">
+              <label htmlFor="csv-upload" className="upload-label">
+                <div className="upload-content">
+                  <span className="upload-icon">📄</span>
+                  <span className="upload-text">
+                    {importFile ? importFile.name : 'Odaberite CSV datoteku'}
+                  </span>
+                </div>
+              </label>
+              <input
+                type="file"
+                id="csv-upload"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="file-input"
+              />
+            </div>
+
+            <button 
+              onClick={handleImport} 
+              className="action-btn import-btn"
+              disabled={loading || !importFile}
+            >
+              {loading ? 'Slanje...' : 'Učitaj na server'}
+            </button>
+
+            {uploadStatus.message && (
+              <p className={`status-message ${uploadStatus.type}`}>
+                {uploadStatus.message}
+              </p>
+            )}
+          </div>
+
+          <div className="divider">ili</div>
+
+          <div className="csv-section">
+            <div className="section-icon">📤</div>
+            <h2>Preuzmi transakcije</h2>
+            <p>Izvezite sve vaše transakcije iz baze u CSV datoteku.</p>
+
+            <button onClick={handleExport} className="action-btn export-btn">
+              Generiraj CSV izvoz
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default CsvTrade;

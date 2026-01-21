@@ -66,7 +66,7 @@ class InstrumentIntervalDataViewSet(viewsets.ReadOnlyModelViewSet):
         instrument_name = self.request.query_params.get('instrument')
 
         if instrument_name:
-            queryset = queryset.filter(instrument__symbol__iexact=instrument_name)
+            queryset = queryset.filter(instrument__symbol__exact=instrument_name)
 
         return queryset.order_by('start_time')
 

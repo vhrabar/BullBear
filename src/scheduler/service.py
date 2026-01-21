@@ -12,7 +12,7 @@ class MinuteAggregateIngestionService:
     Aggregates live 1-minute aggregates into STRICT 10-minute candles.
     """
 
-    BUCKET_MINUTES = 1
+    BUCKET_MINUTES = 10
 
     def __init__(self):
         self.repo = MarketDataRepository()
@@ -52,9 +52,7 @@ class MinuteAggregateIngestionService:
             else:
                 self._update_bucket(self.buckets[key], m)
 
-            # Use current time to decide which buckets have closed. Previously we
-            # passed the message start timestamp which prevents immediate flushing
-            # because start <= end_time, so no bucket was ever considered closed.
+
             self._flush_completed_buckets()
         self.execution.run_once()
 
@@ -81,8 +79,7 @@ class MinuteAggregateIngestionService:
 
     def _flush_completed_buckets(self, now: datetime | None = None):
         """
-        Persist only buckets whose window has CLOSED. Uses current UTC time
-        by default; an explicit `now` can be provided for testing.
+        Persist only buckets whose window has CLOSED.
         """
         if now is None:
             now = datetime.now(tz=timezone.utc)

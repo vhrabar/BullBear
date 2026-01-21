@@ -202,7 +202,6 @@ class MarketDataRepository:
         at snapshot timestamp ts
         """
 
-        # 1) Which portfolios are affected?
         portfolio_ids = session.execute(
             select(PortfolioHolding.portfolio_id)
             .where(PortfolioHolding.instrument_id == instrument_id)

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from repo import MarketDataRepository
+from django_client import DjangoOrdersClient
 
 
 @dataclass(frozen=True)
@@ -17,15 +18,17 @@ class ExecutionResult:
 class OrderExecutionService:
     """
     Executes open orders using latest quote price.
-      - MARKET: fill immediately at last_price
-      - LIMIT: fill when price crosses limit
-      - STOP: trigger -> fill at market
-      - STOP_LIMIT: trigger -> treat as LIMIT
+    - MARKET: fill immediately at last_price
+    - LIMIT: fill when price crosses limit
+    - STOP: trigger -> fill at market
+    - STOP_LIMIT: trigger -> treat as LIMIT
+    Notifies Django backend after each fill.
     """
 
     def __init__(self):
         self.repo = MarketDataRepository()
         self.instrument_map = self.repo.load_instrument_map()
+        self.django_client = DjangoOrdersClient()
 
     def run_once(self) -> list[ExecutionResult]:
         orders = self.repo.load_open_orders()
@@ -64,7 +67,19 @@ class OrderExecutionService:
             fill_qty = remaining
             fill_price = Decimal(str(price))
 
+            # Write fill to DB
             self.repo.create_fill_and_update_order(o.id, fill_qty, fill_price)
+
+            # Notify Django backend
+            try:
+                success = self.django_client.execute_order(o.id)
+                if success:
+                    print(f"[EXEC] Order {o.id} filled & notified Django: qty={fill_qty}, price={fill_price}")
+                else:
+                    print(f"[WARN] Order {o.id} filled but Django returned non-success")
+            except Exception as e:
+                print(f"[ERROR] Failed to notify Django for order {o.id}: {e}")
+
             results.append(ExecutionResult(order_id=o.id, filled_qty=fill_qty, fill_price=fill_price))
 
         return results
@@ -102,7 +117,6 @@ class OrderExecutionService:
         return False
 
     def _load_instrument_symbol_map(self) -> dict[int, str]:
-        # invert the instrument_map
         inv = {}
         for sym, iid in self.instrument_map.items():
             inv[iid] = sym

@@ -2,6 +2,7 @@ from django.db.models import OuterRef, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, generics, filters
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
 from rest_framework.views import APIView
@@ -88,7 +89,7 @@ class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):
             return (
                 InstrumentIntervalData.objects
                 .select_related('instrument')
-                .filter(instrument__symbol__iexact=instrument_name)
+                .filter(instrument__symbol__exact=instrument_name)
                 .order_by('-start_time')[:1]
             )
 
@@ -169,26 +170,16 @@ class InstrumentQuoteViewSet(viewsets.ViewSet):
     Includes a custom action for latest quote retrieval.
     """
 
-    @action(detail=True, methods=['get'], url_path='quote')
+    @action(detail=True, methods=["get"], url_path="quote")
     def latest_quote(self, request, pk=None):
-
-        instrument = pk
-
-        quote = (
-            InstrumentQuote.objects
-            .filter(instrument__iexact=instrument)
-            .order_by("-timestamp")
-            .first()
+        quote = get_object_or_404(
+            InstrumentQuote.objects.select_related("instrument"),
+            instrument__symbol__iexact=pk,
         )
 
-        if not quote:
-            return Response(
-                {"detail": "Quote not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        return Response(InstrumentQuoteSerializer(quote).data, status=status.HTTP_200_OK)
 
-        serializer = InstrumentQuoteSerializer(quote)
-        return Response(serializer.data)
+
 
 
 class CompanyViewSet(viewsets.ModelViewSet):

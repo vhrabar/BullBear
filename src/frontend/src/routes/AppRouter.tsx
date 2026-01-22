@@ -8,6 +8,7 @@ import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
 import Licence  from "../pages/Licence.tsx";
 import DocsLayout from "../pages/Docs.tsx";
+import Leaderboard from "../pages/Leaderboard.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 import About from "../components/About.tsx";
@@ -66,6 +67,19 @@ const AppRouter: React.FC = () => {
                         </ProtectedRoute>
                     }
                 />
+
+                <Route
+                    path="/leaderboard"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Leaderboard />
+                            </Layout>
+                        </ProtectedRoute>
+                            }
+                />
+
+                    
 
                 <Route path="*" element={<PageNotFound />} />
             </Routes>

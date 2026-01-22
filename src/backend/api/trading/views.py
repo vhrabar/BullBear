@@ -225,8 +225,33 @@ class EarningsReportViewSet(viewsets.ModelViewSet):
     serializer_class = EarningsReportSerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "company__ticker": ["exact"],
+    }
+
+    ordering_fields = ["report_date"]
+    ordering = ["report_date"]
+
 
 class DividendViewSet(viewsets.ModelViewSet):
     queryset = Dividend.objects.all()
     serializer_class = DividendSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "company__ticker": ["exact"],
+    }
+
+    ordering_fields = ["ex_date"]
+    ordering = ["ex_date"]
+

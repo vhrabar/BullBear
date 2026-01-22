@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
+from sqlalchemy.orm import declarative_base, mapped_column, Mapped
 from sqlalchemy import (
     Integer, String, DateTime, Numeric, BigInteger,
     ForeignKey, UniqueConstraint, Index, Boolean, DECIMAL
@@ -15,13 +15,7 @@ class InstrumentQuote(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    instrument_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("trading_instrument.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-        index=True,
-    )
+    instrument: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     bid_price: Mapped[float] = mapped_column(Numeric(12, 6), nullable=False)
     bid_size: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -127,68 +121,3 @@ class OrderFill(Base):
 
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
-
-class UserPortfolio(Base):
-    __tablename__ = "users_userportfolio"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
-    balance: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
-
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-
-
-class PortfolioHolding(Base):
-    __tablename__ = "trading_portfolioholding"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-
-    portfolio_id: Mapped[int] = mapped_column(
-        ForeignKey("users_userportfolio.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-
-    instrument_id: Mapped[int] = mapped_column(
-        ForeignKey("trag_instrument.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-
-    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 4), nullable=False)
-    average_price: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
-
-    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
-    __table_args__ = (
-        UniqueConstraint("portfolio_id", "instrument_id", name="portfolio_instrument_unique"),
-    )
-
-
-class PortfolioSnapshot(Base):
-    __tablename__ = "users_portfoliosnapshot"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    portfolio_id: Mapped[int] = mapped_column(ForeignKey("trading_userportfolio.id", ondelete="CASCADE"), index=True)
-    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-
-    cash_balance: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
-    equity_value: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
-    total_value: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
-
-    unrealized_pl: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("0.00"))
-    unrealized_pl_pct: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
-
-    realized_pl: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("0.00"))
-    realized_pl_pct: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
-
-    __table_args__ = (
-        UniqueConstraint("portfolio_id", "ts", name="portfolio_ts_unique_idx"),
-        Index("portfolio_ts_idx", "portfolio_id", "ts"),
-    )

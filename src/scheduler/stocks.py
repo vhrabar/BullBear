@@ -40,7 +40,7 @@ STOCKS = [
     "DELL", # Dell Technologies Inc.
     "ADSK", # Autodesk, Inc.
 
-    "SPY", # SPDR S&P 500 ETF Trust
+
 ]
 
 def get_subscribed_stocks() -> list[str]:

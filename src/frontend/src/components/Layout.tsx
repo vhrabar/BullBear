@@ -23,9 +23,6 @@ function Layout({ children }: LayoutProps) {
             <Link to="/explore" className="side-link">
             Explore
           </Link>
-          <Link to="/leaderboard" className={`side-link ${location.pathname === '/leaderboard' ? 'active' : ''}`}>
-            Leaderboard 🏆
-          </Link>
         </nav>
       </aside>
 

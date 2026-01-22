@@ -8,6 +8,7 @@ import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
+import CSVTade from "../pages/CSVTade.tsx";
 
 const AppRouter: React.FC = () => {
   return (
@@ -33,7 +34,7 @@ const AppRouter: React.FC = () => {
           element={
             <ProtectedRoute>
               <Layout>
-                <CsvTrade />
+                <CSVTade />
               </Layout>
             </ProtectedRoute>
           }

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserPortfolioViewSet, UserProfileViewSet, ContactViewSet, PortfolioSnapshotViewSet export_csv, import_csv,
+from .views import UserPortfolioViewSet, UserProfileViewSet, ContactViewSet, PortfolioSnapshotViewSet, export_csv, import_csv
 
 router = DefaultRouter()
 router.register(r'portofolio-details', UserPortfolioViewSet, basename='portfolio-details')

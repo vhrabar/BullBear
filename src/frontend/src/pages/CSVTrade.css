@@ -1,0 +1,392 @@
+.csv-page {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.csv-nav {
+  padding: 1.5rem 2rem;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.csv-nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.csv-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+
+.csv-logo:hover {
+  opacity: 0.8;
+}
+
+.csv-nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.csv-nav-links a {
+  color: #1e293b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.csv-nav-links a:hover {
+  color: #3b82f6;
+}
+
+.csv-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+.csv-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.csv-header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.csv-header p {
+  font-size: 1.125rem;
+  color: #64748b;
+}
+
+.csv-content {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+.csv-section {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.csv-section h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.csv-section > p {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.csv-format-info {
+  background: #f1f5f9;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.csv-format-info h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+code {
+  display: block;
+  background: #e2e8f0;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #1e293b;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.format-example {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.example {
+  line-height: 1.6;
+}
+
+.upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.upload-area:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.02);
+}
+
+.upload-label {
+  cursor: pointer;
+  display: block;
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+}
+
+.upload-text {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.upload-hint {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-selected {
+  font-size: 0.875rem;
+  color: #16a34a;
+  font-weight: 500;
+  margin-top: 0.75rem;
+}
+
+.checkbox-group {
+  margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.checkbox-label input {
+  margin-top: 0.25rem;
+  cursor: pointer;
+}
+
+.checkbox-label span {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.checkbox-hint {
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin-left: 1.75rem;
+}
+
+.export-info {
+  background: #f1f5f9;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.export-info h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.export-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.export-info li {
+  color: #475569;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.export-info li::before {
+  content: '✓';
+  color: #16a34a;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.import-btn {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+}
+
+.import-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.export-btn {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.status-message {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.status-message.success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.status-message.error {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #fca5a5;
+}
+
+.csv-tips {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.csv-tips h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+}
+
+.csv-tips ul {
+  list-style: none;
+  padding: 0;
+}
+
+.csv-tips li {
+  color: #475569;
+  margin-bottom: 0.75rem;
+  padding-left: 2rem;
+  position: relative;
+  line-height: 1.6;
+}
+
+.csv-tips li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .csv-content {
+    grid-template-columns: 1fr;
+  }
+
+  .divider {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .csv-container {
+    padding: 2rem 1rem;
+  }
+
+  .csv-header h1 {
+    font-size: 2rem;
+  }
+
+  .csv-section {
+    padding: 1.5rem;
+  }
+
+  .csv-nav-container {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .csv-nav-links {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

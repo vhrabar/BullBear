@@ -1,28 +1,34 @@
 from datetime import timedelta
 from math import sqrt
 
-from django.db.models.functions import TruncMinute, TruncDay, TruncHour
-from django.utils import timezone
-from django.db.models import Avg
-from django.utils.dateparse import parse_datetime
+import pandas as pd
 
-from rest_framework import viewsets, status
+from django.db.models import Avg
+from django.db.models.functions import TruncDay, TruncHour, TruncMinute
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.views.decorators.http import require_POST
+
+from rest_framework import permissions, request, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-from rest_framework import permissions
 
-from .functions import _safe_float, _pct, _max_drawdown, _std, _var_cvar
-from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
+from api.trading.models import Instrument, Transaction
+
+from ..orders.permissions import IsServiceExecutor
+from ..trading.models import Instrument, InstrumentIntervalData
+from .functions import _max_drawdown, _pct, _safe_float, _std, _var_cvar
+from .models import ContactMessage, PortfolioSnapshot, UserPortfolio, UserProfile
 from .serializers import (
-    UserPortofolioSerializer,
-    UserProfileSerializer,
     ContactDefaultsSerializer,
     ContactMessageSerializer,
     PortfolioSnapshotSerializer,
+    UserPortofolioSerializer,
+    UserProfileSerializer,
 )
-from ..orders.permissions import IsServiceExecutor
-from ..trading.models import Instrument, InstrumentIntervalData
+
 
 
 class UserPortfolioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -33,6 +39,75 @@ class UserPortfolioViewSet(viewsets.ReadOnlyModelViewSet):
         profile = self.request.user.profile
         return UserPortfolio.objects.filter(user=profile)
 
+@require_POST
+def import_csv(request):
+    file = request.FILES.get("file")
+    if not file:
+        return JsonResponse({"error": "No file uploaded"}, status = 400)
+    try:
+        df = pd.read_csv(file)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    records = df.to_dict(orient = "records")
+    required_fields = {"email", "portfolio_name", "instrument_symbol", "type", "quantity", "price"}
+    for i, row in enumerate(records):
+        for field in required_fields:
+            if field not in row or pd.isna(row[field]) or row[field] == "":
+                return JsonResponse(
+                    {"error": f"Missing value for '{field}' in row {i+1}"},
+                    status = 400
+                    )
+    for row in records:
+        user, _ = User.objects.get_or_create(
+            email = row["email"],
+            defaults = {"username": row.get("username") or ""}
+        )
+        profile, _ = UserProfile.objects.get_or_create(user = user)
+        portfolio, _ = UserPortfolio.objects.get_or_create(
+            user = profile,
+            name = row["portfolio_name"],
+            defaults = {"balance": 10000}
+        )
+        instrument, _ = Instrument.objects.get_or_create(
+            symbol = row["instrument_symbol"],
+            defaults = {"name": row.get("instrument_name") or row["instrument_symbol"], "type": "STOCK"}
+        )
+        executed_at_str = row.get("executed_at")
+        executed_at = parse_datetime(str(executed_at_str)) if executed_at_str else None
+        Transaction.objects.create(
+            portfolio = portfolio,
+            instrument = instrument,
+            type = row["type"].lower(),
+            quantity = float(row["quantity"]),
+            price = float(row["price"]),
+            executed_at = executed_at
+        )
+    return JsonResponse({"records": records})
+
+def export_csv(request):
+    transactions = Transaction.objects.select_related(
+        "portfolio__user__user", "instrument"
+    ).all()
+
+    data = []
+    for t in transactions:
+        data.append({
+            "email": t.portfolio.user.user.email,
+            "username": t.portfolio.user.user.username,
+            "portfolio_name": t.portfolio.name,
+            "instrument_symbol": t.instrument.symbol,
+            "instrument_name": t.instrument.name,
+            "type": t.type,
+            "quantity": float(t.quantity),
+            "price": float(t.price),
+            "executed_at": t.executed_at.strftime("%Y-%m-%d %H:%M:%S") if t.executed_at else "",
+        })
+
+    df = pd.DataFrame(data)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="transactions.csv"'
+    df.to_csv(response, index=False)
+    return response
 
 class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserProfileSerializer

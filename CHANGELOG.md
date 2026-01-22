@@ -48,6 +48,10 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - order history section in dashboard
 - order status tracking
 
+# [0.7.0] - 2026-01-22
+### Added
+- leaderboard with all active users
+
 
 
 

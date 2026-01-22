@@ -22,7 +22,7 @@ class OrderExecutionService:
     - LIMIT: fill when price crosses limit
     - STOP: trigger -> fill at market
     - STOP_LIMIT: trigger -> treat as LIMIT
-    Notifies Django backend after each fill.
+    Calls Django /api/trading/buy or /api/trading/sell to update portfolio.
     """
 
     def __init__(self):
@@ -64,22 +64,38 @@ class OrderExecutionService:
             if remaining <= 0:
                 continue
 
-            fill_qty = remaining
+            fill_qty = remaining.quantize(Decimal('0.0001'))
             fill_price = Decimal(str(price))
 
-            # Write fill to DB
+            # Call Django buy/sell endpoint to update portfolio
+            try:
+                if o.side == "BUY":
+                    success = self.django_client.buy(
+                        portfolio_id=o.portfolio_id,
+                        instrument_symbol=sym,
+                        quantity=fill_qty,
+                        price=fill_price,
+                    )
+                else:  # SELL
+                    success = self.django_client.sell(
+                        portfolio_id=o.portfolio_id,
+                        instrument_symbol=sym,
+                        quantity=fill_qty,
+                        price=fill_price,
+                    )
+
+                if not success:
+                    print(f"[WARN] Order {o.id} - Django buy/sell failed, skipping")
+                    continue
+
+            except Exception as e:
+                print(f"[ERROR] Failed to call Django for order {o.id}: {e}")
+                continue
+
+            # Update order status in DB (create fill record and mark as filled)
             self.repo.create_fill_and_update_order(o.id, fill_qty, fill_price)
 
-            # Notify Django backend
-            try:
-                success = self.django_client.execute_order(o.id)
-                if success:
-                    print(f"[EXEC] Order {o.id} filled & notified Django: qty={fill_qty}, price={fill_price}")
-                else:
-                    print(f"[WARN] Order {o.id} filled but Django returned non-success")
-            except Exception as e:
-                print(f"[ERROR] Failed to notify Django for order {o.id}: {e}")
-
+            print(f"[EXEC] Order {o.id} filled: {o.side} {fill_qty} {sym} @ {fill_price}")
             results.append(ExecutionResult(order_id=o.id, filled_qty=fill_qty, fill_price=fill_price))
 
         return results

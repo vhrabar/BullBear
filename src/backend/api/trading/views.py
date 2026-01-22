@@ -130,8 +130,13 @@ class BuyInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        profile = request.user.profile
-        portfolio = UserPortfolio.objects.get(user=profile)
+        # Support service-to-service calls with portfolio_id
+        portfolio_id = serializer.validated_data.get('portfolio_id')
+        if portfolio_id:
+            portfolio = UserPortfolio.objects.get(id=portfolio_id)
+        else:
+            profile = request.user.profile
+            portfolio = UserPortfolio.objects.get(user=profile)
 
         holding = buy_instrument(
             portfolio=portfolio,
@@ -151,8 +156,13 @@ class SellInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        profile = request.user.profile
-        portfolio = UserPortfolio.objects.get(user=profile)
+        # Support service-to-service calls with portfolio_id
+        portfolio_id = serializer.validated_data.get('portfolio_id')
+        if portfolio_id:
+            portfolio = UserPortfolio.objects.get(id=portfolio_id)
+        else:
+            profile = request.user.profile
+            portfolio = UserPortfolio.objects.get(user=profile)
 
         holding = sell_instrument(
             portfolio=portfolio,

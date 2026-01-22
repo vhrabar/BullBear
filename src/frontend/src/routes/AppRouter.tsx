@@ -1,23 +1,51 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Home from "../pages/Home.tsx";
-import Login from "../pages/Login.tsx";
-import PortfolioPage from "../pages/PortofolioPage.tsx";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+
+import About from "../components/About.tsx";
+import Features from "../components/Features.tsx";
+import Footer from "../components/Footer.tsx";
 import Layout from "../components/Layout.tsx";
-import QuotePage from "../pages/QuotePage.tsx";
-import ExchangePage from "../pages/ExplorePage.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
+
 import CSVTade from "../pages/CSVTade.tsx";
+import Contact from "../pages/Contact.tsx";
+import DocsLayout from "../pages/Docs.tsx";
+import FAQ from "../pages/FAQ.tsx";
+import Home from "../pages/Home.tsx";
+import Licence from "../pages/Licence.tsx";
+import Login from "../pages/Login.tsx";
+import PageNotFound from "../pages/PageNotFound.tsx";
+import PortfolioPage from "../pages/PortofolioPage.tsx";
+import Pricing from "../pages/Pricing.tsx";
+import QuotePage from "../pages/QuotePage.tsx";
+import ExchangePage from "../pages/ExplorePage.tsx";
 
 const AppRouter: React.FC = () => {
   return (
     <Router>
       <Routes>
-
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        
+        <Route path="/licence" element={<Licence />} />
+        <Route path="/docs" element={<DocsLayout />} />
+        <Route path="/docs/:page" element={<DocsLayout />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route
+          path="/about"
+          element={
+            <>
+              <About />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* Protected routes */}
         <Route
           path="/positions"
           element={
@@ -28,7 +56,6 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        
         <Route
           path="/csv"
           element={
@@ -39,7 +66,6 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        
         <Route
           path="/quote/:symbol"
           element={
@@ -50,7 +76,6 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/explore"
           element={
@@ -62,6 +87,8 @@ const AppRouter: React.FC = () => {
           }
         />
 
+        {/* Fallback */}
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Router>
   );

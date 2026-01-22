@@ -1,7 +1,7 @@
 import {ReactNode} from "react";
 import {Link} from "react-router-dom";
 import Footer from "./Footer.tsx";
-import "./Layout.css";
+import "../styles/Layout.css";
 
 interface LayoutProps {
     children: ReactNode;

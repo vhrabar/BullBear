@@ -1,16 +1,39 @@
 from django.db.models import OuterRef, Subquery
-from rest_framework import viewsets, permissions
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions, generics, filters
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote
+from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote, Company, CompanyNews, \
+    EarningsReport, Dividend
 from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
-    BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer
+    BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer, CompanySerializer, \
+    CompanyNewsSerializer, EarningsReportSerializer, DividendSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+
+
+class IsAdminOrReadOnly(BasePermission):
+    """
+    Custom permission: only admin users can modify, everyone else can read.
+    """
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        return request.user and request.user.is_staff
+
+class NewsPagination(LimitOffsetPagination):
+    """
+    Pagination class for company news.
+    """
+    default_limit = 3
+    max_limit = 10
 
 
 class PortfolioHoldingViewSet(viewsets.ModelViewSet):
@@ -32,9 +55,22 @@ class PortfolioHoldingViewSet(viewsets.ModelViewSet):
 
 
 class InstrumentIntervalDataViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = InstrumentIntervalData.objects.select_related('instrument').all()
+    """
+    Returns all interval/candle data.
+    Optional filter: ?instrument=<instrument_symbol>
+    """
     serializer_class = InstrumentIntervalDataSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = InstrumentIntervalData.objects.select_related('instrument').all()
+        instrument_name = self.request.query_params.get('instrument')
+
+        if instrument_name:
+            queryset = queryset.filter(instrument__symbol__exact=instrument_name)
+
+        return queryset.order_by('start_time')
+
 
 
 class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):
@@ -53,7 +89,7 @@ class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):
             return (
                 InstrumentIntervalData.objects
                 .select_related('instrument')
-                .filter(instrument__symbol__iexact=instrument_name)
+                .filter(instrument__symbol__exact=instrument_name)
                 .order_by('-start_time')[:1]
             )
 
@@ -94,8 +130,13 @@ class BuyInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        profile = request.user.profile
-        portfolio = UserPortfolio.objects.get(user=profile)
+        # Support service-to-service calls with portfolio_id
+        portfolio_id = serializer.validated_data.get('portfolio_id')
+        if portfolio_id:
+            portfolio = UserPortfolio.objects.get(id=portfolio_id)
+        else:
+            profile = request.user.profile
+            portfolio = UserPortfolio.objects.get(user=profile)
 
         holding = buy_instrument(
             portfolio=portfolio,
@@ -115,8 +156,13 @@ class SellInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        profile = request.user.profile
-        portfolio = UserPortfolio.objects.get(user=profile)
+        # Support service-to-service calls with portfolio_id
+        portfolio_id = serializer.validated_data.get('portfolio_id')
+        if portfolio_id:
+            portfolio = UserPortfolio.objects.get(id=portfolio_id)
+        else:
+            profile = request.user.profile
+            portfolio = UserPortfolio.objects.get(user=profile)
 
         holding = sell_instrument(
             portfolio=portfolio,
@@ -134,23 +180,78 @@ class InstrumentQuoteViewSet(viewsets.ViewSet):
     Includes a custom action for latest quote retrieval.
     """
 
-    @action(detail=True, methods=['get'], url_path='quote')
+    @action(detail=True, methods=["get"], url_path="quote")
     def latest_quote(self, request, pk=None):
-
-        instrument = pk
-
-        quote = (
-            InstrumentQuote.objects
-            .filter(instrument__iexact=instrument)
-            .order_by("-timestamp")
-            .first()
+        quote = get_object_or_404(
+            InstrumentQuote.objects.select_related("instrument"),
+            instrument__symbol__iexact=pk,
         )
 
-        if not quote:
-            return Response(
-                {"detail": "Quote not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        return Response(InstrumentQuoteSerializer(quote).data, status=status.HTTP_200_OK)
 
-        serializer = InstrumentQuoteSerializer(quote)
-        return Response(serializer.data)
+
+
+
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = Company.objects.all().order_by('name')
+    serializer_class = CompanySerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+
+
+class CompanyNewsViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CompanyNews.objects.all()
+    serializer_class = CompanyNewsSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "companies__ticker": ["exact"],
+    }
+
+    ordering_fields = ["published_at"]
+    ordering = ["-published_at"]
+
+    pagination_class = NewsPagination
+
+
+class EarningsReportViewSet(viewsets.ModelViewSet):
+    queryset = EarningsReport.objects.all()
+    serializer_class = EarningsReportSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "company__ticker": ["exact"],
+    }
+
+    ordering_fields = ["report_date"]
+    ordering = ["report_date"]
+
+
+class DividendViewSet(viewsets.ModelViewSet):
+    queryset = Dividend.objects.all()
+    serializer_class = DividendSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "company__ticker": ["exact"],
+    }
+
+    ordering_fields = ["ex_date"]
+    ordering = ["ex_date"]
+

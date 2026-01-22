@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote
+from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, Company, CompanyNews, \
+    EarningsReport, Dividend
 
 
 class InstrumentSerializer(serializers.ModelSerializer):
@@ -37,7 +38,7 @@ class BuySellSerializer(serializers.Serializer):
     instrument_symbol = serializers.CharField(max_length=16)
     quantity = serializers.DecimalField(max_digits=20, decimal_places=4)
     price = serializers.DecimalField(max_digits=20, decimal_places=6, required=False)
-
+    portfolio_id = serializers.IntegerField(required=False)  # For service-to-service calls
 
 
 class InstrumentQuoteSerializer(serializers.ModelSerializer):
@@ -57,3 +58,30 @@ class InstrumentQuoteSerializer(serializers.ModelSerializer):
             "daily_change_percent",
             "timestamp",
         ]
+
+
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = ['id', 'name', 'ticker', 'sector', 'industry', 'description', 'website', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class CompanyNewsSerializer(serializers.ModelSerializer):
+    companies = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all(), many=True)
+
+    class Meta:
+        model = CompanyNews
+        fields = ['id', 'companies', 'headline', 'content', 'published_at', 'source', 'url', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
+
+
+class EarningsReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EarningsReport
+        fields = "__all__"
+
+class DividendSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dividend
+        fields = "__all__"

@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from .models import Fund, FundSubscription
@@ -14,6 +14,33 @@ class FundViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Fund.objects.filter(creator_portfolio__user=self.request.user.profile)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Allow retrieving any fund by ID (for viewing/subscribing)
+        """
+        pk = kwargs.get('pk')
+        try:
+            fund = Fund.objects.get(pk=pk)
+            serializer = self.get_serializer(fund)
+            return Response(serializer.data)
+        except Fund.DoesNotExist:
+            return Response({"detail": "Fund not found."}, status=404)
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="all",
+        permission_classes=[IsAuthenticated],
+    )
+    def all_funds(self, request):
+        """
+        List all active funds for exploration
+        GET /api/funds/funds/all/
+        """
+        funds = Fund.objects.filter(is_active=True)
+        serializer = FundSerializer(funds, many=True)
+        return Response(serializer.data)
 
 
 class FundSubscriptionViewSet(viewsets.ModelViewSet):
@@ -32,8 +59,8 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
     )
     def unsubscribed(self, request):
         """
-        list fonds to which user in not subscribed
-        GET /api/funds/unsubscribed
+        list funds to which user is not subscribed
+        GET /api/funds/subscriptions/unsubscribed/
         """
 
         subscribed_fund_ids = FundSubscription.objects.filter(
@@ -47,5 +74,23 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
         serializer = FundSerializer(unsubscribed_funds, many=True)
         return Response(serializer.data)
 
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="by-fund/(?P<fund_id>[^/.]+)",
+        permission_classes=[IsAuthenticated],
+    )
+    def by_fund(self, request, fund_id=None):
+        """
+        Get user's subscription for a specific fund
+        GET /api/funds/subscriptions/by-fund/{fund_id}/
+        """
+        subscription = FundSubscription.objects.filter(
+            subscriber_portfolio__user=request.user.profile,
+            fund_id=fund_id
+        ).first()
 
-
+        if subscription:
+            serializer = FundSubscriptionSerializer(subscription)
+            return Response(serializer.data)
+        return Response({"detail": "Subscription not found."}, status=404)

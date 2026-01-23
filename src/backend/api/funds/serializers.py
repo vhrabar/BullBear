@@ -6,14 +6,23 @@ class FundHoldingSerializer(serializers.ModelSerializer):
     class Meta:
         model = FundHolding
         fields = ['id', 'instrument', 'weight_percent']
+        extra_kwargs = {
+            'id': {'read_only': True},
+        }
 
 
 class FundSerializer(serializers.ModelSerializer):
-    holdings = FundHoldingSerializer(many=True)
+    holdings = FundHoldingSerializer(many=True, required=False)
 
     class Meta:
         model = Fund
         fields = ['id', 'creator_portfolio', 'name', 'description', 'is_active', 'total_units', 'nav_per_unit', 'holdings']
+        extra_kwargs = {
+            'id': {'read_only': True},
+            'is_active': {'required': False},
+            'total_units': {'read_only': True},
+            'nav_per_unit': {'read_only': True},
+        }
 
     def create(self, validated_data):
         holdings_data = validated_data.pop('holdings', [])

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Fund, FundHolding, FundSubscription, FundNAVHistory, FundComment
+from decimal import Decimal, ROUND_HALF_UP
 
 
 class FundCommentSerializer(serializers.ModelSerializer):
@@ -73,6 +74,9 @@ class FundSubscriptionSerializer(serializers.ModelSerializer):
     nav_per_unit = serializers.DecimalField(source='fund.nav_per_unit', max_digits=20, decimal_places=6, read_only=True)
     fund_id = serializers.IntegerField(source='fund.id', read_only=True)
 
+    # Accept more precision from clients, we'll quantize to 2 decimals in validation
+    invested_amount = serializers.DecimalField(max_digits=20, decimal_places=6)
+
     class Meta:
         model = FundSubscription
         fields = ['id', 'subscriber_portfolio', 'fund', 'fund_id', 'units', 'invested_amount', 'name', 'description', 'nav_per_unit']
@@ -83,9 +87,12 @@ class FundSubscriptionSerializer(serializers.ModelSerializer):
         return value
 
     def validate_invested_amount(self, value):
+        # Ensure non-negative
         if value < 0:
             raise serializers.ValidationError("Invested amount cannot be negative.")
-        return value
+        # Quantize to 2 decimal places (BANKERS rounding replaced with HALF_UP for financial expectations)
+        quantized = value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return quantized
 
     def update(self, instance, validated_data):
         # If caller included subscriber_portfolio or fund, ensure they match the existing subscription

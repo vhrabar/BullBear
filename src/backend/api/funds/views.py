@@ -108,6 +108,23 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Override partial_update to log incoming data and serializer validation errors
+        so we can see why PATCH requests return 400.
+        """
+        print(f"DEBUG PATCH to FundSubscription {kwargs.get('pk')}: data={request.data}")
+
+        partial = True
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        if not serializer.is_valid():
+            print(f"DEBUG serializer.errors: {serializer.errors}")
+            return Response(serializer.errors, status=400)
+
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
     @action(
         detail=False,
         methods=["get"],
@@ -211,4 +228,3 @@ class FundCommentViewSet(viewsets.ModelViewSet):
         comments = FundComment.objects.filter(fund_id=fund_id).order_by('-created_at')
         serializer = FundCommentSerializer(comments, many=True)
         return Response(serializer.data)
-

@@ -15,13 +15,13 @@ import ETFEdit from "../pages/ETFEdit.tsx";
 import ETFExplore from "../pages/ETFExplore.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
-import Licence from "../pages/Licence";
 import FAQ from "../pages/FAQ";
 import Pricing from "../pages/Pricing";
 import Features from "../components/Features";
 import About from "../components/About";
 import Contact from "../pages/Contact";
 import CSVTade from "../pages/CSVTade";
+import PageNotFound from "../pages/PageNotFound";
 
 const AppRouter: React.FC = () => {
     return (
@@ -36,6 +36,7 @@ const AppRouter: React.FC = () => {
                 <Route path="/features" element={<Features/>}/>
                 <Route path="/about" element={<About/>}/>
                 <Route path="/contact" element={<Contact/>}/>
+                <Route path="/docs/*" element={<DocsLayout/>}/>
 
                 <Route
                     path="/positions"

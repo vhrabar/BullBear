@@ -47,8 +47,7 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - new order form with enhanced options
 - order history section in dashboard
 - order status tracking
-
-
+- 
 ## [0.6.0] - 2026-01-18
 ### Added
 - new portfolio analytics section in dashboard
@@ -59,6 +58,10 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 # [0.7.0] - 2026-01-22
 ### Added
 - leaderboard with all active users
+
+# [0.8.0] -2026-01-22
+### Added
+- funds view
 
 
 

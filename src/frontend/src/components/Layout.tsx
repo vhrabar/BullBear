@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Footer from "./Footer.tsx";
 import "../styles/Layout.css";
 
@@ -8,8 +8,7 @@ interface LayoutProps {
 }
 
 function Layout({ children }: LayoutProps) {
-  const location = useLocation();
-
+      const location = useLocation();
   return (
     <div id="layout-root">
       <aside className="side-menu">
@@ -22,12 +21,10 @@ function Layout({ children }: LayoutProps) {
           <Link to="/positions" className="side-link">
             Portfolio
           </Link>
-
-          <Link to="/explore" className="side-link">
+            <Link to="/explore" className="side-link">
             Explore
           </Link>
-
-          <Link
+            <Link
             to="/favorites"
             className={`side-link ${location.pathname === "/favorites" ? "active" : ""}`}
           >
@@ -37,14 +34,9 @@ function Layout({ children }: LayoutProps) {
           <Link to="/csv" className="side-link">
             Import / Export
           </Link>
-
-          <Link
-            to="/leaderboard"
-            className={`side-link ${location.pathname === "/leaderboard" ? "active" : ""}`}
-          >
+          <Link to="/leaderboard" className={`side-link ${location.pathname === '/leaderboard' ? 'active' : ''}`}>
             Leaderboard
           </Link>
-
           <Link to="/etf/explore" className="side-link">
             Funds
           </Link>

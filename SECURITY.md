@@ -12,6 +12,6 @@
 | 0.5.0   | No        | Dev    |
 | 0.6.0   | No        | Dev    |
 | 0.7.0   | No        | Dev    |
-
+|1.0.0 | Yes       | Stable |
 
 

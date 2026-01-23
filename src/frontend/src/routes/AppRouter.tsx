@@ -9,11 +9,6 @@ import ExchangePage from "../pages/ExplorePage.tsx";
 import Licence  from "../pages/Licence.tsx";
 import DocsLayout from "../pages/Docs.tsx";
 import Leaderboard from "../pages/Leaderboard.tsx";
-import ETFCreate from "../pages/ETFCreate.tsx";
-import ETFOverview from "../pages/ETFOverview.tsx";
-import ETFEdit from "../pages/ETFEdit.tsx";
-import ETFExplore from "../pages/ETFExplore.tsx";
-import FavoritesPage from "../pages/FavoritesPage.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 import FAQ from "../pages/FAQ";
@@ -136,8 +131,7 @@ const AppRouter: React.FC = () => {
                         </ProtectedRoute>
                             }
                 />
-
-                <Route
+                 <Route
                     path="/favorites"
                     element={
                         <ProtectedRoute>
@@ -148,7 +142,7 @@ const AppRouter: React.FC = () => {
                     }
                 />
 
-
+                    
 
                 <Route path="*" element={<PageNotFound />} />
             </Routes>

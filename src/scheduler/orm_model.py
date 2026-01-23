@@ -1,11 +1,9 @@
 from datetime import datetime
-from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
+from sqlalchemy.orm import declarative_base, mapped_column, Mapped
 from sqlalchemy import (
     Integer, String, DateTime, Numeric, BigInteger,
-    ForeignKey, UniqueConstraint, Index, Boolean, DECIMAL
+    ForeignKey, UniqueConstraint, Index, Boolean
 )
-from decimal import Decimal
-
 
 Base = declarative_base()
 
@@ -82,6 +80,52 @@ class Instrument(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+class Fund(Base):
+    __tablename__ = "funds_fund"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    creator_portfolio_id: Mapped[int] = mapped_column(
+        ForeignKey("users_userportfolio.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    total_units: Mapped[float] = mapped_column(Numeric(20, 6), nullable=False, default=0)
+    nav_per_unit: Mapped[float] = mapped_column(Numeric(20, 6), nullable=False, default=1)
+
+
+class FundHolding(Base):
+    __tablename__ = "funds_fundholding"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    fund_id: Mapped[int] = mapped_column(
+        ForeignKey("funds_fund.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    instrument_id: Mapped[int] = mapped_column(
+        ForeignKey("trading_instrument.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    weight_percent: Mapped[float] = mapped_column(Numeric(6, 3), nullable=False)
+
+
+class FundNAVHistory(Base):
+    __tablename__ = "funds_fundnavhistory"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    fund_id: Mapped[int] = mapped_column(
+        ForeignKey("funds_fund.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    nav_per_unit: Mapped[float] = mapped_column(Numeric(20, 6), nullable=False)
+    total_units: Mapped[float] = mapped_column(Numeric(20, 6), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 class Order(Base):
     __tablename__ = "orders_order"

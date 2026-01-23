@@ -6,6 +6,10 @@ import PortfolioPage from "../pages/PortofolioPage.tsx";
 import Layout from "../components/Layout.tsx";
 import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
+import ETFCreate from "../pages/ETFCreate.tsx";
+import ETFOverview from "../pages/ETFOverview.tsx";
+import ETFEdit from "../pages/ETFEdit.tsx";
+import ETFExplore from "../pages/ETFExplore.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 
@@ -49,7 +53,21 @@ const AppRouter: React.FC = () => {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/ETF"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Routes>
+                  <Route path="/explore" element={<ETFExplore />} />
+                  <Route path="/create" element={<ETFCreate />} />
+                  <Route path="/edit/:id" element={<ETFEdit />} />
+                  <Route path="/:id" element={<ETFOverview />} />
+                </Routes>
+              </Layout>
+            </ProtectedRoute>
+          }
+          />
       </Routes>
     </Router>
   );

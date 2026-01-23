@@ -1,0 +1,15 @@
+.popUpTable {
+    border: 0;
+}
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+.popUpTable th:hover {
+    background-color: #a2a2a2;
+}
+.popUpTable th:active {
+    background-color: #6c6c6c;
+}

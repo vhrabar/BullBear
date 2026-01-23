@@ -337,3 +337,65 @@ button.delete-btn:hover {
 .etf-overview tspan {
     fill: #ffffff !important;
 }
+
+/* Fund Information Section */
+.fund-info {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 0.75rem;
+}
+
+.fund-info h3 {
+    margin-bottom: 1rem;
+    color: #3b82f6;
+}
+
+.info-table {
+    width: 100%;
+    max-width: 400px;
+    border-collapse: collapse;
+    background: transparent;
+    border: none;
+}
+
+.info-table td {
+    padding: 0.5rem 0.75rem;
+    color: #e5e7eb;
+    border-bottom: 1px solid #1f2937;
+    font-size: 0.9rem;
+}
+
+.info-table td:first-child {
+    width: 140px;
+    color: #9ca3af;
+}
+
+.info-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Performance Section */
+.performance-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 0.75rem;
+}
+
+.performance-section h3 {
+    margin-bottom: 1rem;
+    color: #4caf50;
+}
+
+.performance-section .MuiChartsAxis-tickLabel,
+.performance-section .MuiChartsAxis-label {
+    fill: #9ca3af !important;
+}
+
+.performance-section .MuiChartsLegend-label {
+    fill: #e5e7eb !important;
+}
+

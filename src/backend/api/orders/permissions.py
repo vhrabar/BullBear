@@ -7,7 +7,7 @@ class IsOrderOwner(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        profile = getattr(request.user, "userprofile", None)
+        profile = getattr(request.user, "profile", None)
         return profile is not None and obj.user_id == profile.id
 
 

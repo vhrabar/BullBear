@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from .models import Fund, FundSubscription
-from .serializers import FundSerializer, FundSubscriptionSerializer
+from .models import Fund, FundSubscription, FundNAVHistory
+from .serializers import FundSerializer, FundSubscriptionSerializer, FundNAVHistorySerializer
 
 
 class FundViewSet(viewsets.ModelViewSet):
@@ -40,6 +40,37 @@ class FundViewSet(viewsets.ModelViewSet):
         """
         funds = Fund.objects.filter(is_active=True)
         serializer = FundSerializer(funds, many=True)
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="performance",
+        permission_classes=[IsAuthenticated],
+    )
+    def performance(self, request, pk=None):
+        """
+        Get historical NAV data for a fund (for performance graphs)
+        GET /api/funds/funds/{id}/performance/
+        Optional query params: ?days=30 (default 30 days)
+        """
+        from datetime import timedelta
+        from django.utils import timezone
+
+        try:
+            fund = Fund.objects.get(pk=pk)
+        except Fund.DoesNotExist:
+            return Response({"detail": "Fund not found."}, status=404)
+
+        days = int(request.query_params.get('days', 30))
+        start_date = timezone.now() - timedelta(days=days)
+
+        history = FundNAVHistory.objects.filter(
+            fund=fund,
+            recorded_at__gte=start_date
+        ).order_by('recorded_at')
+
+        serializer = FundNAVHistorySerializer(history, many=True)
         return Response(serializer.data)
 
 

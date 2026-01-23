@@ -105,3 +105,27 @@ class FundSubscription(models.Model):
     def __str__(self):
         return f"{self.subscriber_portfolio.name}: {self.fund.name} ({self.units} units)"
 
+
+class FundNAVHistory(models.Model):
+    """
+    Track historical NAV values for performance graphs.
+    """
+    fund = models.ForeignKey(
+        Fund,
+        on_delete=models.CASCADE,
+        related_name="nav_history"
+    )
+    nav_per_unit = models.DecimalField(max_digits=20, decimal_places=6)
+    total_units = models.DecimalField(max_digits=20, decimal_places=6)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-recorded_at"]
+        indexes = [
+            models.Index(fields=["fund", "recorded_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.fund.name} NAV: {self.nav_per_unit} at {self.recorded_at}"
+
+

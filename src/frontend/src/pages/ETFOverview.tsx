@@ -236,41 +236,89 @@ function ETFView() {
                 <h2>{etf.name}</h2>
                 <p>{etf.description}</p>
 
-                {/* Fund Info Section */}
-                <div className="fund-info">
-                    <h3>Fund Information</h3>
-                    <table className="info-table">
-                        <tbody>
-                            <tr>
-                                <td><strong>Owner:</strong></td>
-                                <td>{etf.owner_username || 'Unknown'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>NAV per Unit:</strong></td>
-                                <td>${Number(etf.nav_per_unit).toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Total Units:</strong></td>
-                                <td>{Number(etf.total_units).toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Subscribers:</strong></td>
-                                <td>{etf.subscriber_count || 0}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Total Invested:</strong></td>
-                                <td>${Number(etf.total_invested || 0).toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Created:</strong></td>
-                                <td>{etf.created_at ? new Date(etf.created_at).toLocaleDateString() : 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Last Updated:</strong></td>
-                                <td>{etf.updated_at ? new Date(etf.updated_at).toLocaleDateString() : 'N/A'}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                {/* Fund Info and Holdings Section - 3 Column Layout */}
+                <div className="fund-info-holdings-row">
+                    {/* Column 1: Fund Information */}
+                    <div className="fund-info-column">
+                        <h3>Fund Information</h3>
+                        <table className="info-table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Owner:</strong></td>
+                                    <td>{etf.owner_username || 'Unknown'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>NAV per Unit:</strong></td>
+                                    <td>${Number(etf.nav_per_unit).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Units:</strong></td>
+                                    <td>{Number(etf.total_units).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Subscribers:</strong></td>
+                                    <td>{etf.subscriber_count || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Invested:</strong></td>
+                                    <td>${Number(etf.total_invested || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Created:</strong></td>
+                                    <td>{etf.created_at ? new Date(etf.created_at).toLocaleDateString() : 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Last Updated:</strong></td>
+                                    <td>{etf.updated_at ? new Date(etf.updated_at).toLocaleDateString() : 'N/A'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Column 2: Holdings Table */}
+                    <div className="holdings-column">
+                        <h3>Holdings</h3>
+                        {holdingsData.length === 0 ? (
+                            <div className="empty">No holdings</div>
+                        ) : (
+                            <table className="holdings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Instrument</th>
+                                        <th>Weight</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {holdingsData.map((h) => (
+                                        <tr key={h.id}>
+                                            <td>{h.label}</td>
+                                            <td>{h.value.toFixed(2)}%</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+
+                    {/* Column 3: Pie Chart */}
+                    <div className="pie-chart-column">
+                        <h3>Composition</h3>
+                        {holdingsData.length === 0 ? (
+                            <div className="empty">No data</div>
+                        ) : (
+                            <PieChart
+                                series={[{
+                                    data: holdingsData,
+                                    innerRadius: 30,
+                                    outerRadius: 100,
+                                    paddingAngle: 2,
+                                    cornerRadius: 5
+                                }]}
+                                width={350}
+                                height={250}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* Performance Chart Section */}
@@ -281,14 +329,15 @@ function ETFView() {
                             xAxis={[{
                                 data: performanceData.map((_, i) => i),
                                 scaleType: 'point',
+                                tickNumber: 5,
                                 valueFormatter: (value) => {
                                     const item = performanceData[value];
                                     return item ? new Date(item.recorded_at).toLocaleDateString() : '';
                                 },
-                                tickLabelStyle: { fill: '#e5e7eb' },
+                                tickLabelStyle: { fill: '#e5e7eb', fontSize: 11 },
                             }]}
                             yAxis={[{
-                                tickLabelStyle: { fill: '#e5e7eb' },
+                                tickLabelStyle: { fill: '#e5e7eb', fontSize: 12 },
                             }]}
                             series={[{
                                 data: performanceData.map(p => Number(p.nav_per_unit)),
@@ -298,50 +347,14 @@ function ETFView() {
                             width={500}
                             height={300}
                             sx={{
-                                '& .MuiChartsAxis-line': { stroke: '#475569' },
-                                '& .MuiChartsAxis-tick': { stroke: '#475569' },
-                                '& .MuiChartsLegend-label': { fill: '#e5e7eb' },
+                                '& .MuiChartsAxis-root line': { stroke: '#e5e7eb' },
+                                '& .MuiChartsAxis-root text': { fill: '#e5e7eb' },
+                                '& .MuiChartsLegend-root text': { fill: '#e5e7eb' },
+                                '& text': { fill: '#e5e7eb' },
+                                '& tspan': { fill: '#e5e7eb' },
                             }}
                         />
                     </div>
-                )}
-
-                <h3>Holdings:</h3>
-                {holdingsData.length === 0 ? (
-                    <div className="empty">No holdings</div>
-                ) : (
-                    <>
-                        <PieChart
-                            series={[{
-                                data: holdingsData,
-                                innerRadius: 30,
-                                outerRadius: 100,
-                                paddingAngle: 2,
-                                cornerRadius: 5
-                            }]}
-                            width={400}
-                            height={250}
-                            sx={{
-                                '& .MuiChartsLegend-label': { fill: '#e5e7eb' },
-                            }}
-                        />
-                        <table className="holdings-table">
-                            <thead>
-                                <tr>
-                                    <th>Instrument</th>
-                                    <th>Weight</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {holdingsData.map((h) => (
-                                    <tr key={h.id}>
-                                        <td>{h.label}</td>
-                                        <td>{h.value.toFixed(2)}%</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </>
                 )}
                 <div className="etf-actions">
                     {state === 1 ? (

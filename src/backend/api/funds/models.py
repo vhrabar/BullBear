@@ -129,3 +129,31 @@ class FundNAVHistory(models.Model):
         return f"{self.fund.name} NAV: {self.nav_per_unit} at {self.recorded_at}"
 
 
+class FundComment(models.Model):
+    """
+    User comment on a fund.
+    """
+    fund = models.ForeignKey(
+        Fund,
+        on_delete=models.CASCADE,
+        related_name="comments"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="fund_comments"
+    )
+    content = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["fund", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Comment by {self.user.username} on {self.fund.name}"
+
+

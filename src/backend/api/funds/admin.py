@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Fund, FundHolding, FundSubscription
+from .models import Fund, FundHolding, FundSubscription, FundComment
 
 
 class FundHoldingInline(admin.TabularInline):
@@ -25,3 +25,12 @@ class FundSubscriptionAdmin(admin.ModelAdmin):
     list_filter = ['fund', 'subscriber_portfolio']
     search_fields = ['fund__name', 'subscriber_portfolio__name']
     readonly_fields = ['units', 'invested_amount', 'created_at', 'updated_at']
+
+
+@admin.register(FundComment)
+class FundCommentAdmin(admin.ModelAdmin):
+    list_display = ['user', 'fund', 'content', 'created_at']
+    list_filter = ['fund', 'user']
+    search_fields = ['fund__name', 'user__username', 'content']
+    readonly_fields = ['created_at', 'updated_at']
+

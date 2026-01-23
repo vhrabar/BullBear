@@ -1,5 +1,14 @@
 from rest_framework import serializers
-from .models import Fund, FundHolding, FundSubscription, FundNAVHistory
+from .models import Fund, FundHolding, FundSubscription, FundNAVHistory, FundComment
+
+
+class FundCommentSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = FundComment
+        fields = ['id', 'fund', 'user', 'username', 'content', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'username', 'created_at', 'updated_at']
 
 
 class FundHoldingSerializer(serializers.ModelSerializer):

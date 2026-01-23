@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
-from .models import Fund, FundSubscription, FundNAVHistory
-from .serializers import FundSerializer, FundSubscriptionSerializer, FundNAVHistorySerializer
+from .models import Fund, FundSubscription, FundNAVHistory, FundComment
+from .serializers import FundSerializer, FundSubscriptionSerializer, FundNAVHistorySerializer, FundCommentSerializer
 
 
 class FundViewSet(viewsets.ModelViewSet):
@@ -153,3 +153,62 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
             serializer = FundSubscriptionSerializer(subscription)
             return Response(serializer.data)
         return Response({"detail": "Subscription not found."}, status=404)
+
+
+class FundCommentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for CRUD operations on fund comments.
+    """
+    queryset = FundComment.objects.all()
+    serializer_class = FundCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Optionally filter by fund_id query parameter.
+        """
+        queryset = FundComment.objects.all()
+        fund_id = self.request.query_params.get('fund_id', None)
+        if fund_id is not None:
+            queryset = queryset.filter(fund_id=fund_id)
+        return queryset
+
+    def perform_create(self, serializer):
+        """
+        Set the user automatically when creating a comment.
+        """
+        serializer.save(user=self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Only allow users to update their own comments.
+        """
+        comment = self.get_object()
+        if comment.user != request.user:
+            return Response({"detail": "You can only edit your own comments."}, status=403)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Only allow users to delete their own comments.
+        """
+        comment = self.get_object()
+        if comment.user != request.user:
+            return Response({"detail": "You can only delete your own comments."}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="by-fund/(?P<fund_id>[^/.]+)",
+        permission_classes=[IsAuthenticated],
+    )
+    def by_fund(self, request, fund_id=None):
+        """
+        Get all comments for a specific fund.
+        GET /api/funds/comments/by-fund/{fund_id}/
+        """
+        comments = FundComment.objects.filter(fund_id=fund_id).order_by('-created_at')
+        serializer = FundCommentSerializer(comments, many=True)
+        return Response(serializer.data)
+

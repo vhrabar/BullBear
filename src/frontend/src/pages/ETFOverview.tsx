@@ -32,6 +32,16 @@ interface PerformanceData {
     recorded_at: string;
 }
 
+interface FundComment {
+    id: number;
+    fund: number;
+    user: number;
+    username: string;
+    content: string;
+    created_at: string;
+    updated_at: string;
+}
+
 function ETFView() {
     const params = useParams();
     const [loading, setLoading] = useState(true);
@@ -42,6 +52,11 @@ function ETFView() {
     const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
     const [holdingsData, setHoldingsData] = useState<HoldingDisplay[]>([]);
     const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
+    const [comments, setComments] = useState<FundComment[]>([]);
+    const [newComment, setNewComment] = useState("");
+    const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+    const [editingContent, setEditingContent] = useState("");
+    const [currentUsername, setCurrentUsername] = useState<string>("");
 
     useEffect(() => {
         const fetchData = async () => {
@@ -133,6 +148,36 @@ function ETFView() {
                         setState(3);
                     }
                 }
+
+                // Fetch comments for this fund
+                try {
+                    const commentsRes = await fetch("/api/funds/comments/by-fund/" + params.id + "/", {
+                        method: "GET",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                    });
+                    if (commentsRes.ok) {
+                        const commentsData = await commentsRes.json();
+                        setComments(commentsData);
+                    }
+                } catch (err) {
+                    console.error("Failed to load comments:", err);
+                }
+
+                // Get current username
+                try {
+                    const userRes = await fetch("/api/users/user/", {
+                        method: "GET",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                    });
+                    if (userRes.ok) {
+                        const userData = await userRes.json();
+                        setCurrentUsername(userData.username);
+                    }
+                } catch (err) {
+                    console.error("Failed to get current user:", err);
+                }
             } catch (error) {
                 console.error("Failed to load ETF data:", error);
             } finally {
@@ -142,6 +187,92 @@ function ETFView() {
 
         fetchData();
     }, [params.id]);
+
+    // Comment functions
+    async function fetchComments() {
+        try {
+            const commentsRes = await fetch("/api/funds/comments/by-fund/" + params.id + "/", {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            });
+            if (commentsRes.ok) {
+                const commentsData = await commentsRes.json();
+                setComments(commentsData);
+            }
+        } catch (err) {
+            console.error("Failed to load comments:", err);
+        }
+    }
+
+    async function submitComment() {
+        if (!newComment.trim()) return;
+        const csrftoken = getCSRFToken();
+        try {
+            const res = await fetch("/api/funds/comments/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken || "",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    fund: Number(params.id),
+                    content: newComment.trim()
+                })
+            });
+            if (res.ok) {
+                setNewComment("");
+                fetchComments();
+            }
+        } catch (err) {
+            console.error("Failed to submit comment:", err);
+        }
+    }
+
+    async function updateComment(commentId: number) {
+        if (!editingContent.trim()) return;
+        const csrftoken = getCSRFToken();
+        try {
+            const res = await fetch("/api/funds/comments/" + commentId + "/", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken || "",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    content: editingContent.trim()
+                })
+            });
+            if (res.ok) {
+                setEditingCommentId(null);
+                setEditingContent("");
+                fetchComments();
+            }
+        } catch (err) {
+            console.error("Failed to update comment:", err);
+        }
+    }
+
+    async function deleteComment(commentId: number) {
+        const csrftoken = getCSRFToken();
+        try {
+            const res = await fetch("/api/funds/comments/" + commentId + "/", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken || "",
+                },
+                credentials: "include",
+            });
+            if (res.ok) {
+                fetchComments();
+            }
+        } catch (err) {
+            console.error("Failed to delete comment:", err);
+        }
+    }
 
     async function del() {
         const csrftoken = getCSRFToken();
@@ -392,6 +523,87 @@ function ETFView() {
                             <button onClick={sub}>Invest</button>
                         </>
                     ) : null}
+                </div>
+
+                {/* Comments Section */}
+                <div className="comments-section">
+                    <h3>Comments</h3>
+
+                    {/* New Comment Form */}
+                    <div className="new-comment-form">
+                        <textarea
+                            placeholder="Write a comment..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            rows={3}
+                        />
+                        <button onClick={submitComment} disabled={!newComment.trim()}>
+                            Post Comment
+                        </button>
+                    </div>
+
+                    {/* Comments List */}
+                    <div className="comments-list">
+                        {comments.length === 0 ? (
+                            <div className="empty">No comments yet. Be the first to comment!</div>
+                        ) : (
+                            comments.map((comment) => (
+                                <div key={comment.id} className="comment-item">
+                                    <div className="comment-header">
+                                        <span className="comment-author">{comment.username}</span>
+                                        <span className="comment-date">
+                                            {new Date(comment.created_at).toLocaleDateString()} {new Date(comment.created_at).toLocaleTimeString()}
+                                        </span>
+                                    </div>
+
+                                    {editingCommentId === comment.id ? (
+                                        <div className="comment-edit">
+                                            <textarea
+                                                value={editingContent}
+                                                onChange={(e) => setEditingContent(e.target.value)}
+                                                rows={3}
+                                            />
+                                            <div className="comment-edit-actions">
+                                                <button onClick={() => updateComment(comment.id)}>Save</button>
+                                                <button
+                                                    className="cancel-btn"
+                                                    onClick={() => {
+                                                        setEditingCommentId(null);
+                                                        setEditingContent("");
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="comment-content">{comment.content}</p>
+                                            {comment.username === currentUsername && (
+                                                <div className="comment-actions">
+                                                    <button
+                                                        className="edit-btn"
+                                                        onClick={() => {
+                                                            setEditingCommentId(comment.id);
+                                                            setEditingContent(comment.content);
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        className="delete-btn"
+                                                        onClick={() => deleteComment(comment.id)}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

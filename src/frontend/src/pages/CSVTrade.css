@@ -308,6 +308,23 @@ code {
   box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
+.export-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.export-buttons .export-btn {
+  flex: 1;
+}
+
+.export-btn-secondary {
+  background: linear-gradient(135deg, #0e7490 0%, #06b6d4 100%);
+}
+
+.export-btn-secondary:hover {
+  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+}
+
 .status-message {
   margin-top: 1rem;
   padding: 1rem;

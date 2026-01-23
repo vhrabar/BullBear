@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 from math import sqrt
 
 import pandas as pd
@@ -8,6 +9,7 @@ from django.db.models.functions import TruncDay, TruncHour, TruncMinute
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from rest_framework import permissions, request, status, viewsets
@@ -15,12 +17,11 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from api.trading.models import Instrument, Transaction
-
+from ..orders.models import Order
 from ..orders.permissions import IsServiceExecutor
-from ..trading.models import Instrument, InstrumentIntervalData
+from ..trading.models import Instrument, InstrumentIntervalData, PortfolioHolding
 from .functions import _max_drawdown, _pct, _safe_float, _std, _var_cvar
-from .models import ContactMessage, PortfolioSnapshot, UserPortfolio, UserProfile
+from .models import ContactMessage, PortfolioSnapshot, UserPortfolio, UserProfile, User
 from .serializers import (
     ContactDefaultsSerializer,
     ContactMessageSerializer,
@@ -39,8 +40,23 @@ class UserPortfolioViewSet(viewsets.ReadOnlyModelViewSet):
         profile = self.request.user.profile
         return UserPortfolio.objects.filter(user=profile)
 
+@csrf_exempt
 @require_POST
 def import_csv(request):
+    """
+    Import orders from a CSV file for the current authenticated user.
+    Required CSV columns: portfolio_name, instrument_symbol, side, order_type, quantity
+    Optional columns: time_in_force, limit_price, stop_price
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+
+    # Get the current user's profile
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        return JsonResponse({"error": "User profile not found"}, status=404)
+
     file = request.FILES.get("file")
     if not file:
         return JsonResponse({"error": "No file uploaded"}, status = 400)
@@ -49,7 +65,7 @@ def import_csv(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
     records = df.to_dict(orient = "records")
-    required_fields = {"email", "portfolio_name", "instrument_symbol", "type", "quantity", "price"}
+    required_fields = {"portfolio_name", "instrument_symbol", "side", "order_type", "quantity"}
     for i, row in enumerate(records):
         for field in required_fields:
             if field not in row or pd.isna(row[field]) or row[field] == "":
@@ -57,12 +73,9 @@ def import_csv(request):
                     {"error": f"Missing value for '{field}' in row {i+1}"},
                     status = 400
                     )
+
+    created_orders = []
     for row in records:
-        user, _ = User.objects.get_or_create(
-            email = row["email"],
-            defaults = {"username": row.get("username") or ""}
-        )
-        profile, _ = UserProfile.objects.get_or_create(user = user)
         portfolio, _ = UserPortfolio.objects.get_or_create(
             user = profile,
             name = row["portfolio_name"],
@@ -72,40 +85,90 @@ def import_csv(request):
             symbol = row["instrument_symbol"],
             defaults = {"name": row.get("instrument_name") or row["instrument_symbol"], "type": "STOCK"}
         )
-        executed_at_str = row.get("executed_at")
-        executed_at = parse_datetime(str(executed_at_str)) if executed_at_str else None
-        Transaction.objects.create(
-            portfolio = portfolio,
-            instrument = instrument,
-            type = row["type"].lower(),
-            quantity = float(row["quantity"]),
-            price = float(row["price"]),
-            executed_at = executed_at
+
+        # Map side and order_type to model choices
+        side = row["side"].upper()
+        if side not in [Order.Side.BUY, Order.Side.SELL]:
+            return JsonResponse({"error": f"Invalid side '{side}' in row. Use BUY or SELL."}, status=400)
+
+        order_type = row["order_type"].upper()
+        valid_order_types = [ot[0] for ot in Order.OrderType.choices]
+        if order_type not in valid_order_types:
+            return JsonResponse({"error": f"Invalid order_type '{order_type}'. Use MARKET, LIMIT, STOP, or STOP_LIMIT."}, status=400)
+
+        time_in_force = row.get("time_in_force", "GTC")
+        if pd.isna(time_in_force) or time_in_force == "":
+            time_in_force = "GTC"
+        time_in_force = time_in_force.upper()
+
+        limit_price = row.get("limit_price")
+        if pd.isna(limit_price) or limit_price == "":
+            limit_price = None
+        else:
+            limit_price = Decimal(str(limit_price))
+
+        stop_price = row.get("stop_price")
+        if pd.isna(stop_price) or stop_price == "":
+            stop_price = None
+        else:
+            stop_price = Decimal(str(stop_price))
+
+        # Create the order for the current user
+        order = Order.objects.create(
+            user=profile,
+            portfolio=portfolio,
+            instrument=instrument,
+            side=side,
+            order_type=order_type,
+            time_in_force=time_in_force,
+            quantity=Decimal(str(row["quantity"])),
+            limit_price=limit_price,
+            stop_price=stop_price,
+            status=Order.Status.OPEN,
         )
-    return JsonResponse({"records": records})
+        created_orders.append(order.id)
+
+    return JsonResponse({"message": f"Successfully imported {len(created_orders)} orders", "order_ids": created_orders})
 
 def export_csv(request):
-    transactions = Transaction.objects.select_related(
-        "portfolio__user__user", "instrument"
-    ).all()
+    """
+    Export orders for the current authenticated user to CSV.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+
+    # Get the current user's profile
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        return JsonResponse({"error": "User profile not found"}, status=404)
+
+    # Export only the current user's orders
+    orders = Order.objects.select_related(
+        "portfolio", "instrument"
+    ).filter(user=profile)
 
     data = []
-    for t in transactions:
+    for o in orders:
         data.append({
-            "email": t.portfolio.user.user.email,
-            "username": t.portfolio.user.user.username,
-            "portfolio_name": t.portfolio.name,
-            "instrument_symbol": t.instrument.symbol,
-            "instrument_name": t.instrument.name,
-            "type": t.type,
-            "quantity": float(t.quantity),
-            "price": float(t.price),
-            "executed_at": t.executed_at.strftime("%Y-%m-%d %H:%M:%S") if t.executed_at else "",
+            "portfolio_name": o.portfolio.name,
+            "instrument_symbol": o.instrument.symbol,
+            "instrument_name": o.instrument.name,
+            "side": o.side,
+            "order_type": o.order_type,
+            "time_in_force": o.time_in_force,
+            "quantity": float(o.quantity),
+            "limit_price": float(o.limit_price) if o.limit_price else "",
+            "stop_price": float(o.stop_price) if o.stop_price else "",
+            "status": o.status,
+            "filled_quantity": float(o.filled_quantity),
+            "avg_fill_price": float(o.avg_fill_price) if o.avg_fill_price else "",
+            "placed_at": o.placed_at.strftime("%Y-%m-%d %H:%M:%S") if o.placed_at else "",
         })
 
     df = pd.DataFrame(data)
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="transactions.csv"'
+    response["Content-Disposition"] = 'attachment; filename="my_orders.csv"'
     df.to_csv(response, index=False)
     return response
 

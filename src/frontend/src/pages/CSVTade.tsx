@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import "./CSVTrade.css";
+import {getCSRFToken} from "../utils/csrf";
+
 
 function CSVTade() {
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -34,16 +36,19 @@ function CSVTade() {
 
     try {
     
+      const csrfToken = getCSRFToken();
       const response = await fetch('/api/users/import/', {
         method: 'POST',
         headers: {
-          'Authorization': `Token ${token}` 
+          'Authorization': `Token ${token}`,
+          ...(csrfToken && { 'X-CSRFToken': csrfToken })
         },
+        credentials: 'include',
         body: formData,
       });
 
       if (response.ok) {
-        setUploadStatus({ message: `Uspješno uvezeno! Transakcije su dodane u portfelj.`, type: 'success' });
+        setUploadStatus({ message: `Uspješno uvezeno! Nalozi su kreirani u sustavu.`, type: 'success' });
         setImportFile(null);
       } else {
         const errorData = await response.json();
@@ -71,7 +76,7 @@ function CSVTade() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'bullbear_export.csv';
+        a.download = 'my_orders.csv';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -89,21 +94,25 @@ function CSVTade() {
     <div className="csv-page">
       <div className="csv-container">
         <div className="csv-header">
-          <h1>Uvoz i izvoz transakcija</h1>
-          <p>Upravljajte transakcijama putem CSV datoteka sinkroniziranih s bazom</p>
+          <h1>Uvoz i izvoz naloga</h1>
+          <p>Upravljajte nalozima i pozicijama putem CSV datoteka sinkroniziranih s bazom</p>
         </div>
 
         <div className="csv-content">
           <div className="csv-section">
             <div className="section-icon">📥</div>
-            <h2>Uvezi transakcije</h2>
-            
+            <h2>Uvezi naloge</h2>
+
             <div className="csv-format-info">
-              <h3>Potreban format (Pandas schema):</h3>
-              <code>email,portfolio_name,instrument_symbol,type,quantity,price</code>
-              <p className="format-example">Primjer (buy/sell):</p>
+              <h3>Potreban format (Order schema):</h3>
+              <code>portfolio_name,instrument_symbol,side,order_type,quantity</code>
+              <p className="format-example">Opcionalna polja: time_in_force, limit_price, stop_price</p>
+              <p className="format-example">Primjer (BUY/SELL, MARKET/LIMIT/STOP/STOP_LIMIT):</p>
               <code className="example">
-                korisnik@email.com,MojPortfelj,AAPL,buy,10,185.50
+                MojPortfelj,AAPL,BUY,MARKET,10
+              </code>
+              <code className="example">
+                MojPortfelj,AAPL,SELL,LIMIT,5,GTC,185.50
               </code>
             </div>
 
@@ -144,11 +153,11 @@ function CSVTade() {
 
           <div className="csv-section">
             <div className="section-icon">📤</div>
-            <h2>Preuzmi transakcije</h2>
-            <p>Izvezite sve vaše transakcije iz baze u CSV datoteku.</p>
+            <h2>Preuzmi naloge</h2>
+            <p>Izvezite svoje naloge u CSV datoteku.</p>
 
             <button onClick={handleExport} className="action-btn export-btn">
-              Generiraj CSV izvoz
+              Izvezi moje naloge
             </button>
           </div>
         </div>

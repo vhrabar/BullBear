@@ -99,7 +99,6 @@ docker compose exec frontend npm test
 | **Antun Silov**                | [@AntunSilov](https://github.com/AntunSilov)         | Backend razvojni inženjer                                   | Razvija API funkcionalnosti, implementira poslovnu logiku i održava stabilnost komunikacije s bazom podataka.                                            |
 | **Leon Zorko**                 | [@LeonZorko](https://github.com/LeonZorko)           | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
 | **Vedran Radojčić**            | [@VedranRadojcic](https://github.com/VedranRadojcic) | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
-| **Viktor Lazić**               | [@ViktorLazic3](https://github.com/ViktorLazic3)     | Frontend razvojni inženjer                                  | Razvija i optimizira React korisničko sučelje, implementira dinamične komponente i vizualizacije podataka te osigurava konzistentno korisničko iskustvo. |
 | **Luka Varga**                 | [@MegaNoris](https://github.com/MegaNoris)           | Full-stack razvojni inženjer                                | Radi na povezivanju frontenda i backenda, unaprjeđuje performanse sustava i osigurava tehničku stabilnost aplikacije.                                    |
 
 

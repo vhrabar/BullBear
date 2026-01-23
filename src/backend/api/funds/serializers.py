@@ -77,11 +77,35 @@ class FundSubscriptionSerializer(serializers.ModelSerializer):
         model = FundSubscription
         fields = ['id', 'subscriber_portfolio', 'fund', 'fund_id', 'units', 'invested_amount', 'name', 'description', 'nav_per_unit']
 
+    def validate_units(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Units cannot be negative.")
+        return value
+
+    def validate_invested_amount(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Invested amount cannot be negative.")
+        return value
+
+    def update(self, instance, validated_data):
+        # If caller included subscriber_portfolio or fund, ensure they match the existing subscription
+        subscriber_portfolio = validated_data.pop('subscriber_portfolio', None)
+        fund = validated_data.pop('fund', None)
+
+        if subscriber_portfolio is not None and subscriber_portfolio != instance.subscriber_portfolio:
+            raise serializers.ValidationError("Cannot change subscriber_portfolio of an existing subscription.")
+        if fund is not None and fund != instance.fund:
+            raise serializers.ValidationError("Cannot change fund of an existing subscription.")
+
+        # Update allowed fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
 
 class FundNAVHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FundNAVHistory
         fields = ['id', 'fund', 'nav_per_unit', 'total_units', 'recorded_at']
         read_only_fields = ['id', 'recorded_at']
-
-

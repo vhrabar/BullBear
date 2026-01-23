@@ -43,7 +43,7 @@ function ETFPage() {
             (x.name || '').toLowerCase().includes(search) ||
             (x.description || '').toLowerCase().includes(search))
         if (res.length === 0) {
-            setContent(<div className="empty">No ETFs found</div>);
+            setContent(<div className="empty">No ETFs found<button onClick={() => navigate("/ETF/create")}>Create new ETF</button></div>);
         }
         else {setContent(<table>
         <thead>

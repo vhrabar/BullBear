@@ -13,6 +13,7 @@ import ETFCreate from "../pages/ETFCreate.tsx";
 import ETFOverview from "../pages/ETFOverview.tsx";
 import ETFEdit from "../pages/ETFEdit.tsx";
 import ETFExplore from "../pages/ETFExplore.tsx";
+import FavoritesPage from "../pages/FavoritesPage.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 import FAQ from "../pages/FAQ";
@@ -136,7 +137,18 @@ const AppRouter: React.FC = () => {
                             }
                 />
 
-                    
+                <Route
+                    path="/favorites"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <FavoritesPage />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+
 
                 <Route path="*" element={<PageNotFound />} />
             </Routes>

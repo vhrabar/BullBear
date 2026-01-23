@@ -27,6 +27,13 @@ function Layout({ children }: LayoutProps) {
             Explore
           </Link>
 
+          <Link
+            to="/favorites"
+            className={`side-link ${location.pathname === "/favorites" ? "active" : ""}`}
+          >
+            Favorites
+          </Link>
+
           <Link to="/csv" className="side-link">
             Import / Export
           </Link>

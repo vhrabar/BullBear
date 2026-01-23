@@ -1,10 +1,4 @@
-let dotenv;
-if (typeof process !== "undefined" && process.versions != null && process.versions.node != null) {
-  dotenv = await import("dotenv");
-  dotenv.config();
-}
-
-const env = typeof process !== "undefined" && process.env?.NODE_ENV?.trim() || "development";
+const env = import.meta.env.MODE; // "development" | "production"
 
 export const MICROSOFT_OAUTH_URL =
   env === "production"

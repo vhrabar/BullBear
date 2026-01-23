@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import Home from "../pages/Home.tsx";
 import Login from "../pages/Login.tsx";
 import PortfolioPage from "../pages/PortofolioPage.tsx";
@@ -14,63 +14,92 @@ import ETFExplore from "../pages/ETFExplore.tsx";
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 
 const AppRouter: React.FC = () => {
-  return (
-    <Router>
-      <Routes>
+    return (
+        <Router>
+            <Routes>
 
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+                <Route path="/" element={<Home/>}/>
+                <Route path="/login" element={<Login/>}/>
 
-        <Route
-          path="/positions"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <PortfolioPage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/positions"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <PortfolioPage/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
 
-        <Route
-          path="/quote/:symbol"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <QuotePage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
+                <Route
+                    path="/quote/:symbol"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <QuotePage/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
 
-        <Route
-          path="/explore"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <ExchangePage />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ETF"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/explore" element={<ETFExplore />} />
-                  <Route path="/create" element={<ETFCreate />} />
-                  <Route path="/edit/:id" element={<ETFEdit />} />
-                  <Route path="/:id" element={<ETFOverview />} />
-                </Routes>
-              </Layout>
-            </ProtectedRoute>
-          }
-          />
-      </Routes>
-    </Router>
-  );
+                <Route
+                    path="/explore"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ExchangePage/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/ETF/explore"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFExplore/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/create"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFCreate/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/edit/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFEdit/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFOverview/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+            </Routes>
+        </Router>
+    );
 };
 
 export default AppRouter;

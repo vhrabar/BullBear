@@ -2,16 +2,17 @@ from django.db.models import OuterRef, Subquery
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, generics, filters
 from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, BasePermission, SAFE_METHODS
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote, Company, CompanyNews, \
-    EarningsReport, Dividend
+    EarningsReport, Dividend, FavoriteInstrument
 from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
     BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer, CompanySerializer, \
-    CompanyNewsSerializer, EarningsReportSerializer, DividendSerializer
+    CompanyNewsSerializer, EarningsReportSerializer, DividendSerializer, FavoriteInstrumentSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
@@ -66,7 +67,7 @@ class InstrumentIntervalDataViewSet(viewsets.ReadOnlyModelViewSet):
         instrument_name = self.request.query_params.get('instrument')
 
         if instrument_name:
-            queryset = queryset.filter(instrument__symbol__iexact=instrument_name)
+            queryset = queryset.filter(instrument__symbol__exact=instrument_name)
 
         return queryset.order_by('start_time')
 
@@ -88,7 +89,7 @@ class LatestInstrumentDataViewSet(viewsets.ReadOnlyModelViewSet):
             return (
                 InstrumentIntervalData.objects
                 .select_related('instrument')
-                .filter(instrument__symbol__iexact=instrument_name)
+                .filter(instrument__symbol__exact=instrument_name)
                 .order_by('-start_time')[:1]
             )
 
@@ -129,17 +130,27 @@ class BuyInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        profile = request.user.profile
-        portfolio = UserPortfolio.objects.get(user=profile)
+        try:
+            # Support service-to-service calls with portfolio_id
+            portfolio_id = serializer.validated_data.get('portfolio_id')
+            if portfolio_id:
+                portfolio = UserPortfolio.objects.get(id=portfolio_id)
+            else:
+                profile = request.user.profile
+                portfolio = UserPortfolio.objects.get(user=profile)
 
-        holding = buy_instrument(
-            portfolio=portfolio,
-            instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
-            quantity=serializer.validated_data['quantity'], # type: ignore
-            price=serializer.validated_data.get('price')    # type: ignore
-        )
+            holding = buy_instrument(
+                portfolio=portfolio,
+                instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
+                quantity=serializer.validated_data['quantity'], # type: ignore
+                price=serializer.validated_data.get('price')    # type: ignore
+            )
 
-        return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+            return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+        except UserPortfolio.DoesNotExist:
+            return Response({"error": "Portfolio not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -150,17 +161,27 @@ class SellInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        profile = request.user.profile
-        portfolio = UserPortfolio.objects.get(user=profile)
+        try:
+            # Support service-to-service calls with portfolio_id
+            portfolio_id = serializer.validated_data.get('portfolio_id')
+            if portfolio_id:
+                portfolio = UserPortfolio.objects.get(id=portfolio_id)
+            else:
+                profile = request.user.profile
+                portfolio = UserPortfolio.objects.get(user=profile)
 
-        holding = sell_instrument(
-            portfolio=portfolio,
-            instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
-            quantity=serializer.validated_data['quantity'], # type: ignore
-            price=serializer.validated_data.get('price')    # type: ignore
-        )
+            holding = sell_instrument(
+                portfolio=portfolio,
+                instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
+                quantity=serializer.validated_data['quantity'], # type: ignore
+                price=serializer.validated_data.get('price')    # type: ignore
+            )
 
-        return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+            return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+        except UserPortfolio.DoesNotExist:
+            return Response({"error": "Portfolio not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class InstrumentQuoteViewSet(viewsets.ViewSet):
@@ -169,26 +190,16 @@ class InstrumentQuoteViewSet(viewsets.ViewSet):
     Includes a custom action for latest quote retrieval.
     """
 
-    @action(detail=True, methods=['get'], url_path='quote')
+    @action(detail=True, methods=["get"], url_path="quote")
     def latest_quote(self, request, pk=None):
-
-        instrument = pk
-
-        quote = (
-            InstrumentQuote.objects
-            .filter(instrument__iexact=instrument)
-            .order_by("-timestamp")
-            .first()
+        quote = get_object_or_404(
+            InstrumentQuote.objects.select_related("instrument"),
+            instrument__symbol__iexact=pk,
         )
 
-        if not quote:
-            return Response(
-                {"detail": "Quote not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        return Response(InstrumentQuoteSerializer(quote).data, status=status.HTTP_200_OK)
 
-        serializer = InstrumentQuoteSerializer(quote)
-        return Response(serializer.data)
+
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -224,8 +235,103 @@ class EarningsReportViewSet(viewsets.ModelViewSet):
     serializer_class = EarningsReportSerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "company__ticker": ["exact"],
+    }
+
+    ordering_fields = ["report_date"]
+    ordering = ["report_date"]
+
 
 class DividendViewSet(viewsets.ModelViewSet):
     queryset = Dividend.objects.all()
     serializer_class = DividendSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+
+    filterset_fields = {
+        "company__ticker": ["exact"],
+    }
+
+    ordering_fields = ["ex_date"]
+    ordering = ["ex_date"]
+
+
+class FavoriteInstrumentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for user's favorite instruments.
+    - GET /api/trading/favorites/ - List user's favorites
+    - POST /api/trading/favorites/ - Add instrument to favorites
+    - DELETE /api/trading/favorites/{id}/ - Remove from favorites
+    - GET /api/trading/favorites/check/?instrument_id=X - Check if instrument is favorited
+    """
+    serializer_class = FavoriteInstrumentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return FavoriteInstrument.objects.select_related('instrument').filter(
+            user=self.request.user.profile
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user.profile)
+
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        """Check if an instrument is in user's favorites."""
+        instrument_id = request.query_params.get('instrument_id')
+        if not instrument_id:
+            return Response(
+                {"error": "instrument_id query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        is_favorite = FavoriteInstrument.objects.filter(
+            user=request.user.profile,
+            instrument_id=instrument_id
+        ).exists()
+
+        return Response({"is_favorite": is_favorite})
+
+    @action(detail=False, methods=['post'])
+    def toggle(self, request):
+        """Toggle favorite status for an instrument."""
+        instrument_id = request.data.get('instrument_id')
+        if not instrument_id:
+            return Response(
+                {"error": "instrument_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            instrument = Instrument.objects.get(id=instrument_id)
+        except Instrument.DoesNotExist:
+            return Response(
+                {"error": "Instrument not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        favorite, created = FavoriteInstrument.objects.get_or_create(
+            user=request.user.profile,
+            instrument=instrument
+        )
+
+        if not created:
+            favorite.delete()
+            return Response({"is_favorite": False, "message": "Removed from favorites"})
+
+        return Response(
+            {"is_favorite": True, "message": "Added to favorites"},
+            status=status.HTTP_201_CREATED
+        )
+
+

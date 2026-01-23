@@ -26,6 +26,7 @@ export interface Order {
   status: OrderStatus;
   placed_at: string;
   fills: OrderFill[];
+  reject_reason?: string;
 }
 
 function parseSymbol(display: string): string {
@@ -157,7 +158,15 @@ export default function TransactionHistory({ symbol, refreshKey = 0 }: Props) {
 
               <div className="right">{o.avg_fill_price ? fmtMoney(o.value) : "—"}</div>
 
-              <div className={`status ${o.status.toLowerCase()}`}>{o.status}</div>
+              <div
+                className={`status ${o.status.toLowerCase()}`}
+                title={o.status === "REJECTED" && o.reject_reason ? o.reject_reason : undefined}
+              >
+                {o.status}
+                {o.status === "REJECTED" && o.reject_reason && (
+                  <span className="reject-reason" title={o.reject_reason}> ⚠</span>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import StockPanel from "../components/StockPanel.tsx";
+import { toggleFavorite, checkFavorite } from "../api/favorites";
 
 interface Holding {
   id: number;
@@ -73,6 +74,25 @@ function QuotePage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [earnings, setEarnings] = useState<EarningsReport[]>([]);
   const [dividends, setDividends] = useState<Dividend[]>([]);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [instrumentId, setInstrumentId] = useState<number | null>(null);
+
+  // Fetch instrument ID and check if favorited
+  useEffect(() => {
+    if (!symbol) return;
+
+    fetch(`/api/trading/instruments/${symbol}/`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.id) {
+          setInstrumentId(data.id);
+          checkFavorite(data.id).then(setIsFavorite).catch(() => setIsFavorite(false));
+        }
+      })
+      .catch(() => setInstrumentId(null));
+  }, [symbol]);
 
   // Fetch holding if in portfolio
   useEffect(() => {
@@ -161,8 +181,28 @@ function QuotePage() {
         }
       : null;
 
+  const handleToggleFavorite = async () => {
+    if (!instrumentId) return;
+    try {
+      const result = await toggleFavorite(instrumentId);
+      setIsFavorite(result.is_favorite);
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+    }
+  };
+
   return (
     <div className="portfolio-page">
+      <div className="quote-header-actions">
+        <button
+          className={`quote-fav-btn ${isFavorite ? "is-favorite" : ""}`}
+          onClick={handleToggleFavorite}
+          disabled={!instrumentId}
+          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFavorite ? "★ Favorited" : "☆ Add to Favorites"}
+        </button>
+      </div>
       <StockPanel
         stock={stock}
         holding={holding}

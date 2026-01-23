@@ -141,7 +141,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         if order.status not in {Order.Status.OPEN, Order.Status.PARTIALLY_FILLED}:
             return Response({"detail": "Order not executable."}, status=status.HTTP_400_BAD_REQUEST)
 
-        quote = InstrumentQuote.objects.filter(instrument=order.instrument.symbol).first()
+        quote = InstrumentQuote.objects.filter(instrument=order.instrument).first()
         if not quote:
             return Response({"detail": "No quote available."}, status=status.HTTP_409_CONFLICT)
 
@@ -181,7 +181,7 @@ class OrderFillViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self) -> QuerySet[OrderFill]:
-        profile = self.request.user.userprofile
+        profile = self.request.user.profile
         return (
             OrderFill.objects
             .filter(order__user=profile)

@@ -36,6 +36,9 @@ urlpatterns = [
     # Trading
     path('api/trading/', include('api.trading.urls')),
 
+    # Funds
+    path('api/funds/', include('api.funds.urls')),
+
     # Users
     path('api/users/', include('api.users.urls')),
 

@@ -8,31 +8,31 @@ import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
 import Licence  from "../pages/Licence.tsx";
 import DocsLayout from "../pages/Docs.tsx";
+import Leaderboard from "../pages/Leaderboard.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
-import About from "../components/About.tsx";
-import Features from "../components/Features.tsx";
-import Footer from "../components/Footer.tsx";
-import PageNotFound from "../pages/PageNotFound.tsx";
-import Contact from "../pages/Contact.tsx";
-import Pricing from "../pages/Pricing.tsx";
-import FAQ from "../pages/FAQ.tsx";
-
+import FAQ from "../pages/FAQ";
+import Pricing from "../pages/Pricing";
+import Features from "../components/Features";
+import About from "../components/About";
+import Contact from "../pages/Contact";
+import CSVTade from "../pages/CSVTade";
+import PageNotFound from "../pages/PageNotFound";
 
 const AppRouter: React.FC = () => {
     return (
         <Router>
             <Routes>
+
                 <Route path="/" element={<Home/>}/>
-                <Route path="/licence" element={<Licence />}/>
-                <Route path="/docs/:page" element={<DocsLayout />} />
-                <Route path="/docs" element={<DocsLayout />} />
-                <Route path="/features" element={<Features/>} />
-                <Route path="/pricing" element={<Pricing />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/about" element={<><About/><Footer/></>} />
                 <Route path="/login" element={<Login/>}/>
+                <Route path="/license" element={<Licence/>}/>
+                <Route path="/faq" element={<FAQ/>}/>
+                <Route path="/pricing" element={<Pricing/>}/>
+                <Route path="/features" element={<Features/>}/>
+                <Route path="/about" element={<About/>}/>
+                <Route path="/contact" element={<Contact/>}/>
+                <Route path="/docs/*" element={<DocsLayout/>}/>
 
                 <Route
                     path="/positions"
@@ -66,6 +66,83 @@ const AppRouter: React.FC = () => {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/csv"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <CSVTade/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/explore"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFExplore/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/create"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFCreate/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/edit/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFEdit/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/ETF/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <ETFOverview/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/leaderboard"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Leaderboard />
+                            </Layout>
+                        </ProtectedRoute>
+                            }
+                />
+                 <Route
+                    path="/favorites"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <FavoritesPage />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                    
 
                 <Route path="*" element={<PageNotFound />} />
             </Routes>

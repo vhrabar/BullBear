@@ -22,10 +22,13 @@ class MinuteAggregateIngestionService:
         # in-memory aggregation store
         # key: (instrument_id, bucket_start)
         self.buckets: Dict[tuple[int, datetime], dict] = {}
+        print("MinuteAggregateIngestionService initialized.")
 
     def handle_messages(self, messages: List[EquityAgg]):
+        print(f"Received {len(messages)} EquityAgg messages.")
         for m in messages:
             if m.event_type != "AM":
+                print("Expected AM event type for EquityAgg, got:", m.event_type)
                 continue
 
             instrument_id = self.map_symbol_to_id(m.symbol)
@@ -49,7 +52,8 @@ class MinuteAggregateIngestionService:
             else:
                 self._update_bucket(self.buckets[key], m)
 
-            self._flush_completed_buckets(now=start)
+
+            self._flush_completed_buckets()
         self.execution.run_once()
 
     def _create_bucket(self, key, instrument_id, bucket_start, bucket_end, m):
@@ -73,10 +77,13 @@ class MinuteAggregateIngestionService:
         bucket["volume"] += m.volume
         bucket["updated_at"] = datetime.now(tz=timezone.utc)
 
-    def _flush_completed_buckets(self, now: datetime):
+    def _flush_completed_buckets(self, now: datetime | None = None):
         """
         Persist only buckets whose window has CLOSED.
         """
+        if now is None:
+            now = datetime.now(tz=timezone.utc)
+
         to_flush = []
 
         for key, bucket in self.buckets.items():
@@ -91,6 +98,11 @@ class MinuteAggregateIngestionService:
                 print(payload)
                 print("=============================\n")
                 continue
+
+            try:
+                print(f"Persisting candle for instrument_id={payload['instrument_id']} start={payload['start_time']}")
+            except Exception:
+                pass
 
             self.repo.upsert_candle(payload)
 

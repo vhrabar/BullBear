@@ -1,4 +1,5 @@
 import requests
+from decimal import Decimal
 from configuration import settings
 
 
@@ -7,7 +8,6 @@ class DjangoOrdersClient:
         self.base = settings.DJANGO_API_BASE_URL.rstrip("/")
         self.session = requests.Session()
         self.session.headers.update({
-            "Authorization": f"Token {settings.DJANGO_SERVICE_TOKEN}",
             "Content-Type": "application/json",
         })
 
@@ -17,18 +17,39 @@ class DjangoOrdersClient:
         r.raise_for_status()
         return r.json()
 
-    def execute_order(self, order_id: int) -> bool:
-        url = f"{self.base}/api/orders/orders/{order_id}/execute/"
-        r = self.session.post(url, json={}, timeout=10)
+    def buy(self, portfolio_id: int, instrument_symbol: str, quantity: Decimal, price: Decimal) -> bool:
+        """Call /api/trading/buy endpoint"""
+        url = f"{self.base}/api/trading/buy"
+        payload = {
+            "portfolio_id": portfolio_id,
+            "instrument_symbol": instrument_symbol,
+            "quantity": f"{quantity:.4f}",
+            "price": f"{price:.6f}",
+        }
+        print(f"[DEBUG] POST {url} payload={payload}")
+        r = self.session.post(url, json=payload, timeout=10)
 
-        # 200 => executed
+        if r.status_code == 200:
+            print(f"[DEBUG] BUY success: {r.json()}")
+            return True
+
+        print(f"[BUY ERROR] {r.status_code}: {r.text[:500]}")
+        return False
+
+    def sell(self, portfolio_id: int, instrument_symbol: str, quantity: Decimal, price: Decimal) -> bool:
+        """Call /api/trading/sell endpoint"""
+        url = f"{self.base}/api/trading/sell"
+        payload = {
+            "portfolio_id": portfolio_id,
+            "instrument_symbol": instrument_symbol,
+            "quantity": f"{quantity:.4f}",
+            "price": f"{price:.6f}",
+        }
+        print(f"[DEBUG] POST {url} payload={payload}")
+        r = self.session.post(url, json=payload, timeout=10)
+
         if r.status_code == 200:
             return True
 
-        # 409 => not executable now
-        if r.status_code == 409:
-            return False
-
-        # others => error
-        print("[EXECUTE ERROR]", r.status_code, r.text)
+        print(f"[SELL ERROR] {r.status_code}: {r.text[:500]}")
         return False

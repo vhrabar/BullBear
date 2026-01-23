@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import InstrumentViewSet, InstrumentIntervalDataViewSet, PortfolioHoldingViewSet, BuyInstrumentView, \
     SellInstrumentView, LatestInstrumentDataViewSet, InstrumentQuoteViewSet, CompanyViewSet, CompanyNewsViewSet, \
-    EarningsReportViewSet, DividendViewSet
+    EarningsReportViewSet, DividendViewSet, FavoriteInstrumentViewSet
 
 router = DefaultRouter()
 router.register(r'instruments', InstrumentViewSet)
@@ -14,6 +14,7 @@ router.register(r'companies', CompanyViewSet, basename='company')
 router.register(r'news', CompanyNewsViewSet, basename='news')
 router.register(r"earnings-reports", EarningsReportViewSet)
 router.register(r"dividends", DividendViewSet)
+router.register(r'favorites', FavoriteInstrumentViewSet, basename='favorites')
 
 
 urlpatterns = [

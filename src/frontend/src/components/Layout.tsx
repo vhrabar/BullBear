@@ -23,11 +23,10 @@ function Layout({children}: LayoutProps) {
                     <Link to="/explore" className="side-link">
                         Explore
                     </Link>
-                </nav>
-                <nav className="side-nav">
-                    <Link to="/csv" className="side-link">
-                        Import / Export
+                     <Link to="/etf/explore" className="side-link">
+                        Funds
                     </Link>
+
                 </nav>
             </aside>
 
@@ -41,7 +40,7 @@ function Layout({children}: LayoutProps) {
                 <Footer/>
             </div>
         </div>
-);
+    );
 }
 
 export default Layout;

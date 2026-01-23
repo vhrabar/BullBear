@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     'api.main',
     'api.users',
     'api.trading',
-    'api.orders',
+    'api.funds',
 
     'rest_framework',
     'rest_framework.authtoken',

@@ -62,16 +62,19 @@ def sell_instrument(portfolio: Portfolio, instrument_symbol: str, quantity: Deci
     if holding.quantity < quantity:
         raise ValidationError("Not enough holdings to sell.")
 
-    # Update portfolio balance
-    total_sale_revenue = quantity * price
-    portfolio.balance += total_sale_revenue
-
     # Use latest close price if price not provided
     if price is None:
         latest_data = instrument.interval_data.order_by("-start_time").first()  # type: ignore
         if not latest_data:
             raise ValidationError("No market data available for this instrument.")
         price = latest_data.close_price
+
+    price = Decimal(price)
+
+    # Update portfolio balance
+    total_sale_revenue = quantity * price
+    portfolio.balance += total_sale_revenue
+    portfolio.save()
 
     holding.quantity -= quantity
     holding.save()

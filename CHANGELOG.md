@@ -48,6 +48,14 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - order history section in dashboard
 - order status tracking
 
+
+## [0.6.0] - 2026-01-18
+### Added
+- new portfolio analytics section in dashboard
+- performance metrics and charts
+- asset allocation breakdown
+- risk assessment metrics
+
 # [0.7.0] - 2026-01-22
 ### Added
 - leaderboard with all active users

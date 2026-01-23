@@ -38,7 +38,7 @@ class BuySellSerializer(serializers.Serializer):
     instrument_symbol = serializers.CharField(max_length=16)
     quantity = serializers.DecimalField(max_digits=20, decimal_places=4)
     price = serializers.DecimalField(max_digits=20, decimal_places=6, required=False)
-
+    portfolio_id = serializers.IntegerField(required=False)  # For service-to-service calls
 
 
 class InstrumentQuoteSerializer(serializers.ModelSerializer):

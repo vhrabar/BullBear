@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'api.main',
     'api.users',
     'api.trading',
+    'api.funds',
     'api.orders',
     'api.leaderboard',
 
@@ -126,7 +127,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
 }
 
 

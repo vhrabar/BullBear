@@ -20,6 +20,10 @@ import PortfolioPage from "../pages/PortofolioPage.tsx";
 import Pricing from "../pages/Pricing.tsx";
 import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
+import ETFCreate from "../pages/ETFCreate.tsx";
+import ETFOverview from "../pages/ETFOverview.tsx";
+import ETFEdit from "../pages/ETFEdit.tsx";
+import ETFExplore from "../pages/ETFExplore.tsx";
 
 const AppRouter: React.FC = () => {
   return (
@@ -87,8 +91,6 @@ const AppRouter: React.FC = () => {
           }
         />
 
-        {/* Fallback */}
-        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </Router>
   );

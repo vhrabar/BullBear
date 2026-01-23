@@ -23,6 +23,12 @@ function Layout({children}: LayoutProps) {
                     <Link to="/explore" className="side-link">
                         Explore
                     </Link>
+                    <Link to="/csv" className="side-link">
+                        Import / Export
+                    </Link>
+                    <Link to="/leaderboard" className="side-link">
+                        Leaderboard
+                    </Link>
                      <Link to="/etf/explore" className="side-link">
                         Funds
                     </Link>

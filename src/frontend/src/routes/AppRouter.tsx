@@ -12,6 +12,13 @@ import ETFEdit from "../pages/ETFEdit.tsx";
 import ETFExplore from "../pages/ETFExplore.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
+import Licence from "../pages/Licence";
+import FAQ from "../pages/FAQ";
+import Pricing from "../pages/Pricing";
+import Features from "../components/Features";
+import About from "../components/About";
+import Contact from "../pages/Contact";
+import CSVTade from "../pages/CSVTade";
 
 const AppRouter: React.FC = () => {
     return (
@@ -20,6 +27,12 @@ const AppRouter: React.FC = () => {
 
                 <Route path="/" element={<Home/>}/>
                 <Route path="/login" element={<Login/>}/>
+                <Route path="/license" element={<Licence/>}/>
+                <Route path="/faq" element={<FAQ/>}/>
+                <Route path="/pricing" element={<Pricing/>}/>
+                <Route path="/features" element={<Features/>}/>
+                <Route path="/about" element={<About/>}/>
+                <Route path="/contact" element={<Contact/>}/>
 
                 <Route
                     path="/positions"
@@ -53,6 +66,17 @@ const AppRouter: React.FC = () => {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/csv"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <CSVTade/>
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
                 <Route
                     path="/ETF/explore"
                     element={

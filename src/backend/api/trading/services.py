@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from .models import PortfolioHolding, Instrument
 from api.users.models import UserPortfolio as Portfolio
 from django.db.models import QuerySet

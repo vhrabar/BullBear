@@ -130,22 +130,27 @@ class BuyInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Support service-to-service calls with portfolio_id
-        portfolio_id = serializer.validated_data.get('portfolio_id')
-        if portfolio_id:
-            portfolio = UserPortfolio.objects.get(id=portfolio_id)
-        else:
-            profile = request.user.profile
-            portfolio = UserPortfolio.objects.get(user=profile)
+        try:
+            # Support service-to-service calls with portfolio_id
+            portfolio_id = serializer.validated_data.get('portfolio_id')
+            if portfolio_id:
+                portfolio = UserPortfolio.objects.get(id=portfolio_id)
+            else:
+                profile = request.user.profile
+                portfolio = UserPortfolio.objects.get(user=profile)
 
-        holding = buy_instrument(
-            portfolio=portfolio,
-            instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
-            quantity=serializer.validated_data['quantity'], # type: ignore
-            price=serializer.validated_data.get('price')    # type: ignore
-        )
+            holding = buy_instrument(
+                portfolio=portfolio,
+                instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
+                quantity=serializer.validated_data['quantity'], # type: ignore
+                price=serializer.validated_data.get('price')    # type: ignore
+            )
 
-        return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+            return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+        except UserPortfolio.DoesNotExist:
+            return Response({"error": "Portfolio not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -156,22 +161,27 @@ class SellInstrumentView(APIView):
         serializer = BuySellSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Support service-to-service calls with portfolio_id
-        portfolio_id = serializer.validated_data.get('portfolio_id')
-        if portfolio_id:
-            portfolio = UserPortfolio.objects.get(id=portfolio_id)
-        else:
-            profile = request.user.profile
-            portfolio = UserPortfolio.objects.get(user=profile)
+        try:
+            # Support service-to-service calls with portfolio_id
+            portfolio_id = serializer.validated_data.get('portfolio_id')
+            if portfolio_id:
+                portfolio = UserPortfolio.objects.get(id=portfolio_id)
+            else:
+                profile = request.user.profile
+                portfolio = UserPortfolio.objects.get(user=profile)
 
-        holding = sell_instrument(
-            portfolio=portfolio,
-            instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
-            quantity=serializer.validated_data['quantity'], # type: ignore
-            price=serializer.validated_data.get('price')    # type: ignore
-        )
+            holding = sell_instrument(
+                portfolio=portfolio,
+                instrument_symbol=serializer.validated_data['instrument_symbol'],   # type: ignore
+                quantity=serializer.validated_data['quantity'], # type: ignore
+                price=serializer.validated_data.get('price')    # type: ignore
+            )
 
-        return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+            return Response(PortfolioHoldingSerializer(holding).data, status=status.HTTP_200_OK)
+        except UserPortfolio.DoesNotExist:
+            return Response({"error": "Portfolio not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class InstrumentQuoteViewSet(viewsets.ViewSet):

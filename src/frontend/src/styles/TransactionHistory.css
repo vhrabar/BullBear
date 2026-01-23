@@ -102,3 +102,9 @@
 .status.rejected {
   color: #fca5a5;
 }
+
+.reject-reason {
+  cursor: help;
+  margin-left: 0.25rem;
+}
+

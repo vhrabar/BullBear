@@ -67,6 +67,24 @@ class OrderExecutionService:
             fill_qty = remaining.quantize(Decimal('0.0001'))
             fill_price = Decimal(str(price))
 
+            # Check balance for BUY orders
+            if o.side == "BUY":
+                required_amount = fill_qty * fill_price
+                portfolio_balance = self.repo.get_portfolio_balance(o.portfolio_id)
+
+                if portfolio_balance is None:
+                    print(f"[WARN] Order {o.id} - Could not fetch portfolio balance, skipping")
+                    continue
+
+                if portfolio_balance < required_amount:
+                    # Reject the order due to insufficient balance
+                    self.repo.reject_order(
+                        o.id,
+                        f"Insufficient balance: required ${required_amount:.2f}, available ${portfolio_balance:.2f}"
+                    )
+                    print(f"[REJECT] Order {o.id} rejected: insufficient balance ({portfolio_balance} < {required_amount})")
+                    continue
+
             # Call Django buy/sell endpoint to update portfolio
             try:
                 if o.side == "BUY":

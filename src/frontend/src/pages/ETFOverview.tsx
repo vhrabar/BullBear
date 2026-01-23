@@ -284,7 +284,11 @@ function ETFView() {
                                 valueFormatter: (value) => {
                                     const item = performanceData[value];
                                     return item ? new Date(item.recorded_at).toLocaleDateString() : '';
-                                }
+                                },
+                                tickLabelStyle: { fill: '#e5e7eb' },
+                            }]}
+                            yAxis={[{
+                                tickLabelStyle: { fill: '#e5e7eb' },
                             }]}
                             series={[{
                                 data: performanceData.map(p => Number(p.nav_per_unit)),
@@ -293,6 +297,11 @@ function ETFView() {
                             }]}
                             width={500}
                             height={300}
+                            sx={{
+                                '& .MuiChartsAxis-line': { stroke: '#475569' },
+                                '& .MuiChartsAxis-tick': { stroke: '#475569' },
+                                '& .MuiChartsLegend-label': { fill: '#e5e7eb' },
+                            }}
                         />
                     </div>
                 )}
@@ -312,6 +321,9 @@ function ETFView() {
                             }]}
                             width={400}
                             height={250}
+                            sx={{
+                                '& .MuiChartsLegend-label': { fill: '#e5e7eb' },
+                            }}
                         />
                         <table className="holdings-table">
                             <thead>

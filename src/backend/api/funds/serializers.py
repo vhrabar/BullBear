@@ -59,9 +59,14 @@ class FundSerializer(serializers.ModelSerializer):
 
 
 class FundSubscriptionSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='fund.name', read_only=True)
+    description = serializers.CharField(source='fund.description', read_only=True)
+    nav_per_unit = serializers.DecimalField(source='fund.nav_per_unit', max_digits=20, decimal_places=6, read_only=True)
+    fund_id = serializers.IntegerField(source='fund.id', read_only=True)
+
     class Meta:
         model = FundSubscription
-        fields = ['id', 'subscriber_portfolio', 'fund', 'units', 'invested_amount']
+        fields = ['id', 'subscriber_portfolio', 'fund', 'fund_id', 'units', 'invested_amount', 'name', 'description', 'nav_per_unit']
 
 
 class FundNAVHistorySerializer(serializers.ModelSerializer):

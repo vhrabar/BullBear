@@ -27,12 +27,19 @@ function ETFPage() {
         .then((data) => {
             setFunds(data);
         })
+        .catch((err) => {
+            console.error("Error fetching funds:", err);
+            setFunds([]);
+        })
+        .finally(() => {
+            setLoading(false);
+        });
     }, [page])
 
     useEffect(() => {
-        setLoading(true);
+        if (loading) return;
 
-        const res = funds.filter((x: any) => 
+        const res = funds.filter((x: any) =>
             (x.name || '').toLowerCase().includes(search) ||
             (x.description || '').toLowerCase().includes(search))
         if (res.length === 0) {
@@ -44,7 +51,7 @@ function ETFPage() {
         </thead>
         <tbody>
         {res.map((x: any) => (
-            <tr key={x.id} onClick={() => navigate("/ETF/"+x.id)} style={{cursor: "pointer"}}>
+            <tr key={x.fund_id || x.id} onClick={() => navigate("/ETF/"+(x.fund_id || x.id))} style={{cursor: "pointer"}}>
                 <td>{x.name}</td>
                 <td style={{overflow: "hidden"}}>{x.description}</td>
                 <td>{x.nav_per_unit}</td>
@@ -53,9 +60,7 @@ function ETFPage() {
         {page === 0? <tr key="create-btn"><td colSpan={3}><button onClick={() => navigate("/ETF/create")}>Create new ETF</button></td></tr> : null}
         </tbody>
         </table>)}
-
-        setLoading(false);
-    }, [funds, search]);
+    }, [funds, search, page, loading]);
 
     function openTab(i: SetStateAction<number>) {
         setPage(i);

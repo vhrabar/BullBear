@@ -80,7 +80,33 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return FundSubscription.objects.filter(subscriber_portfolio__user=self.request.user.profile)
+        # Get all portfolios belonging to this user
+        user_portfolios = self.request.user.profile.portfolios.all()
+        return FundSubscription.objects.filter(
+            subscriber_portfolio__in=user_portfolios,
+            fund__is_active=True
+        ).select_related('fund')
+
+    def list(self, request, *args, **kwargs):
+        """
+        List all subscriptions for the current user
+        GET /api/funds/subscriptions/
+        """
+        # Debug: print all subscriptions for this user's profile
+        all_subs = FundSubscription.objects.all()
+        print(f"DEBUG: Total subscriptions in DB: {all_subs.count()}")
+
+        user_profile = request.user.profile
+        print(f"DEBUG: User profile: {user_profile}")
+
+        user_portfolios = user_profile.portfolios.all()
+        print(f"DEBUG: User portfolios: {list(user_portfolios.values_list('id', 'name'))}")
+
+        queryset = self.get_queryset()
+        print(f"DEBUG: Filtered subscriptions count: {queryset.count()}")
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(
         detail=False,
@@ -90,17 +116,18 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
     )
     def unsubscribed(self, request):
         """
-        list funds to which user is not subscribed
+        list active funds to which user is not subscribed and does not own
         GET /api/funds/subscriptions/unsubscribed/
         """
+        user_portfolios = request.user.profile.portfolios.all()
 
         subscribed_fund_ids = FundSubscription.objects.filter(
-            subscriber_portfolio__user=request.user.profile
+            subscriber_portfolio__in=user_portfolios
         ).values_list("fund__id", flat=True)
         user_funds_id = Fund.objects.filter(
-            creator_portfolio__user=request.user.profile
+            creator_portfolio__in=user_portfolios
         ).values_list("id", flat=True)
-        unsubscribed_funds = Fund.objects.exclude(id__in=subscribed_fund_ids).exclude(id__in=user_funds_id)
+        unsubscribed_funds = Fund.objects.filter(is_active=True).exclude(id__in=subscribed_fund_ids).exclude(id__in=user_funds_id)
 
         serializer = FundSerializer(unsubscribed_funds, many=True)
         return Response(serializer.data)
@@ -116,8 +143,9 @@ class FundSubscriptionViewSet(viewsets.ModelViewSet):
         Get user's subscription for a specific fund
         GET /api/funds/subscriptions/by-fund/{fund_id}/
         """
+        user_portfolios = request.user.profile.portfolios.all()
         subscription = FundSubscription.objects.filter(
-            subscriber_portfolio__user=request.user.profile,
+            subscriber_portfolio__in=user_portfolios,
             fund_id=fund_id
         ).first()
 

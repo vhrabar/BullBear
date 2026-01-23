@@ -1,25 +1,17 @@
-// Combine CRA and Vite env variables
-const env = (() => {
-  // Vite
-  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_ENV) {
-    return import.meta.env.VITE_ENV;
-  }
-  // Fallback: if CRA replaced REACT_APP_ENV at build time
-  if (typeof process !== "undefined" && process.env?.REACT_APP_ENV) {
-    return process.env.REACT_APP_ENV;
-  }
-  return "development"; // default
-})();
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const env = process.env.NODE_ENV?.trim() || "development";
+
 export const MICROSOFT_OAUTH_URL =
   env === "production"
-    ? "https://api.bull-bear.app/auth/microsoft/login"
-    : "http://localhost:8000/auth/microsoft/login";
+    ? process.env.MICROSOFT_OAUTH_URL_PROD
+    : process.env.MICROSOFT_OAUTH_URL_DEV;
 
 export const GOOGLE_OAUTH_URL =
   env === "production"
-    ? "https://api.bull-bear.app/auth/google/login"
-    : "http://localhost:8000/auth/google/login";
-
-
+    ? process.env.GOOGLE_OAUTH_URL_PROD
+    : process.env.GOOGLE_OAUTH_URL_DEV;
 
 export const IS_PRODUCTION = env === "production";

@@ -159,6 +159,44 @@
   }
 }
 
+/* Quote page favorite button */
+.quote-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+.quote-fav-btn {
+  background: transparent;
+  border: 1px solid #374151;
+  color: #9ca3af;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.quote-fav-btn:hover {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.quote-fav-btn.is-favorite {
+  color: #fbbf24;
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.quote-fav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
   .portfolio-metrics {
     grid-template-columns: 1fr 1fr;

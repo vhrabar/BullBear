@@ -9,10 +9,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import PortfolioHolding, InstrumentIntervalData, Instrument, InstrumentQuote, Company, CompanyNews, \
-    EarningsReport, Dividend
+    EarningsReport, Dividend, FavoriteInstrument
 from .serializers import PortfolioHoldingSerializer, InstrumentIntervalDataSerializer, InstrumentSerializer, \
     BuySellSerializer, LatestInstrumentDataSerializer, InstrumentQuoteSerializer, CompanySerializer, \
-    CompanyNewsSerializer, EarningsReportSerializer, DividendSerializer
+    CompanyNewsSerializer, EarningsReportSerializer, DividendSerializer, FavoriteInstrumentSerializer
 from .services import buy_instrument, sell_instrument
 from api.users.models import UserProfile, UserPortfolio
 from django.views.decorators.csrf import csrf_exempt
@@ -264,4 +264,74 @@ class DividendViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ["ex_date"]
     ordering = ["ex_date"]
+
+
+class FavoriteInstrumentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for user's favorite instruments.
+    - GET /api/trading/favorites/ - List user's favorites
+    - POST /api/trading/favorites/ - Add instrument to favorites
+    - DELETE /api/trading/favorites/{id}/ - Remove from favorites
+    - GET /api/trading/favorites/check/?instrument_id=X - Check if instrument is favorited
+    """
+    serializer_class = FavoriteInstrumentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return FavoriteInstrument.objects.select_related('instrument').filter(
+            user=self.request.user.profile
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user.profile)
+
+    @action(detail=False, methods=['get'])
+    def check(self, request):
+        """Check if an instrument is in user's favorites."""
+        instrument_id = request.query_params.get('instrument_id')
+        if not instrument_id:
+            return Response(
+                {"error": "instrument_id query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        is_favorite = FavoriteInstrument.objects.filter(
+            user=request.user.profile,
+            instrument_id=instrument_id
+        ).exists()
+
+        return Response({"is_favorite": is_favorite})
+
+    @action(detail=False, methods=['post'])
+    def toggle(self, request):
+        """Toggle favorite status for an instrument."""
+        instrument_id = request.data.get('instrument_id')
+        if not instrument_id:
+            return Response(
+                {"error": "instrument_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            instrument = Instrument.objects.get(id=instrument_id)
+        except Instrument.DoesNotExist:
+            return Response(
+                {"error": "Instrument not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        favorite, created = FavoriteInstrument.objects.get_or_create(
+            user=request.user.profile,
+            instrument=instrument
+        )
+
+        if not created:
+            favorite.delete()
+            return Response({"is_favorite": False, "message": "Removed from favorites"})
+
+        return Response(
+            {"is_favorite": True, "message": "Added to favorites"},
+            status=status.HTTP_201_CREATED
+        )
+
 

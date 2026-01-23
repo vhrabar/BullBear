@@ -249,3 +249,29 @@ class Dividend(models.Model):
 
     def __str__(self):
         return f"{self.company.name} - {self.ex_date} - {self.dividend_amount} {self.currency}"
+
+
+class FavoriteInstrument(models.Model):
+    """
+    Represents a user's favorite instrument.
+    Each user can have multiple favorite instruments.
+    """
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="favorite_instruments"
+    )
+    instrument = models.ForeignKey(
+        Instrument,
+        on_delete=models.CASCADE,
+        related_name="favorited_by"
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "instrument")
+        ordering = ["-added_at"]
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.instrument.symbol}"
+

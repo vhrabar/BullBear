@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, CompanyNews, Company, \
-    EarningsReport, Dividend
+    EarningsReport, Dividend, FavoriteInstrument
 
 
 @admin.register(Instrument)
@@ -104,4 +104,14 @@ class DividendAdmin(admin.ModelAdmin):
     search_fields = ("company__name", "company__ticker")
     ordering = ("ex_date",)
     date_hierarchy = "ex_date"
+
+
+@admin.register(FavoriteInstrument)
+class FavoriteInstrumentAdmin(admin.ModelAdmin):
+    list_display = ("user", "instrument", "added_at")
+    list_filter = ("instrument", "added_at")
+    search_fields = ("user__user__username", "instrument__symbol", "instrument__name")
+    ordering = ("-added_at",)
+    date_hierarchy = "added_at"
+
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Instrument, InstrumentIntervalData, PortfolioHolding, InstrumentQuote, Company, CompanyNews, \
-    EarningsReport, Dividend
+    EarningsReport, Dividend, FavoriteInstrument
 
 
 class InstrumentSerializer(serializers.ModelSerializer):
@@ -85,3 +85,17 @@ class DividendSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dividend
         fields = "__all__"
+
+
+class FavoriteInstrumentSerializer(serializers.ModelSerializer):
+    instrument_details = InstrumentSerializer(source='instrument', read_only=True)
+    instrument_id = serializers.PrimaryKeyRelatedField(
+        queryset=Instrument.objects.all(),
+        source='instrument',
+        write_only=True
+    )
+
+    class Meta:
+        model = FavoriteInstrument
+        fields = ['id', 'instrument', 'instrument_id', 'instrument_details', 'added_at']
+        read_only_fields = ['id', 'instrument', 'added_at']

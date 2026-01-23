@@ -2,6 +2,7 @@ import { useState, useEffect, ChangeEvent } from "react";
 import { useParams } from "react-router-dom";
 import ETFPopUp from "../components/ETFPopUp";
 import ScrollBox from "../components/ScrollBox";
+import { getCSRFToken } from "../utils/csrf";
 import './ETFManage.css';
 
 interface Instrument {
@@ -34,14 +35,14 @@ function ETFEdit() {
     const [isPopUpOpen, setIsPopUpOpen] = useState(false);
     const [search, setSearch] = useState("");
     const [content, setContent] = useState(<table>
-        <tr><th>Name</th><th>Weight</th></tr>
+        <thead><tr><th>Name</th><th>Weight</th></tr></thead>
     </table>);
     const [popContent, setPopContent] = useState(<div></div>);
     const [popList, setPopList] = useState<Instrument[]>([]);
     
     useEffect(() => {
         setLoading(true);
-        fetch("/api/funds/funds/"+params.id, {
+        fetch("/api/funds/funds/" + params.id + "/", {
             method: "GET",
             headers: { "Content-Type": "application/json" }
         })
@@ -50,44 +51,54 @@ function ETFEdit() {
             return res.json();
         })
         .then(async (data: ETF) => {
-            let names: string[] = [];
-            await data.holdings.forEach(async (x) => {
-                await fetch("/api/trading/instruments/"+x.instrument, {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" }
-                })
-                .then(async (res) => {
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                    return res.json();
-                })
-                .then((data2) => {
-                    names.push(data2.name);
-                })
+            // Fetch all instruments once to get names
+            const instrumentsRes = await fetch("/api/trading/instruments/", {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+            if (!instrumentsRes.ok) throw new Error(`HTTP ${instrumentsRes.status}`);
+            const allInstruments = await instrumentsRes.json();
+
+            // Map holdings with instrument names by matching ID
+            const holdingsWithNames = data.holdings.map((x) => {
+                const instrument = allInstruments.find((inst: Instrument) => inst.id === x.instrument);
+                return {
+                    id: x.instrument,
+                    name: instrument ? instrument.name : `Instrument ${x.instrument}`,
+                    weight: parseFloat(x.weight_percent)
+                };
             });
             setName(data.name);
             setDescription(data.description);
-            setHoldings(data.holdings.map((x, index) => ({
-                id: x.instrument,
-                name: names[index],
-                weight: x.weight_percent
-            })));
+            setHoldings(holdingsWithNames);
+            setLoading(false);
+        })
+        .catch(() => {
             setLoading(false);
         });
-    }, []);
+    }, [params.id]);
 
     useEffect(() => {
+        const handleWeightChange = (index: number, value: number) => {
+            setHoldings(prev => prev.map((item, i) =>
+                i === index ? { ...item, weight: Math.max(value, 1) } : item
+            ));
+        };
+
         setContent(<table>
-        <tr><th>Name</th><th>Weight</th></tr>
+        <thead><tr><th>Name</th><th>Weight</th></tr></thead>
+        <tbody>
         <ScrollBox>
          {holdings.map((x, index) => (
             <tr key={x.id}>
                 <td>{x.name}</td>
-                <td><input value={x.weight} key={index} type="number" min={1} onChange={(e) =>{
-                    holdings[index].weight = Math.max(Number(e.target.value), 1);
+                <td><input value={x.weight} type="number" min={1} onChange={(e) => {
+                    handleWeightChange(index, Number(e.target.value));
                 }}></input></td>
                 </tr>
                 ))}
         </ScrollBox>
+        </tbody>
         </table>)
     }, [holdings]);
 
@@ -95,16 +106,18 @@ function ETFEdit() {
         const res = popList.filter((x) => 
             x.name.toLowerCase().includes(search));
         setPopContent(<table className="popUpTable">
+            <tbody>
             <ScrollBox>
             {res.map((x) => (
                 <tr key={x.id} onDoubleClick={() => {
-                    setHoldings([...holdings, {id: x.id, name: x.name, weight: 1}]);
+                    setHoldings(prev => [...prev, {id: x.id, name: x.name, weight: 1}]);
                     setIsPopUpOpen(false);
-                }}>{x.name}</tr>
+                }}><td>{x.name}</td></tr>
             ))}
             </ScrollBox>
+            </tbody>
         </table>)
-    }), [popList, search]
+    }, [popList, search]);
 
     async function addHoldings() {
         await fetch("/api/trading/instruments/", {
@@ -116,7 +129,8 @@ function ETFEdit() {
             })
             .then((data : Instrument[]) => {
                 const res = data.filter((x) => !(holdings.some((h) => h.id === x.id)))
-                setPopList(res)
+                setPopList(res);
+                setIsPopUpOpen(true);
             })
     }
 
@@ -147,41 +161,47 @@ function ETFEdit() {
             return res.json();
         })
         .then(async (data) => {
-            await fetch("/api/funds/funds/"+params.id, {
+            const csrftoken = getCSRFToken();
+            const portfolioId = Array.isArray(data) ? data[0].id : data.id;
+            await fetch("/api/funds/funds/" + params.id + "/", {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken || "",
+                },
                 credentials: "include",
                 body: JSON.stringify({
                     name: name,
                     description: description,
-                    creator_portfolio: data.id,
+                    creator_portfolio: portfolioId,
                     holdings: holdings.map((x) => ({
                         instrument: x.id,
-                        weight: x.weight / n}))
+                        weight_percent: (x.weight / n) * 100}))
                 })
             })
             .then(async (res) => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                window.location.href = "/ETF/"+params.id;
+                window.location.href = "/ETF/" + params.id;
             });
         })
     }
 
-    return(<div>
-        {loading ? <div>Loading...</div> : <div>
-        <h3>ETF Edit Page</h3>
+    return(<div className="etf-container">
+        {loading ? <div className="loading">Loading...</div> : <div>
         <ETFPopUp showPop={isPopUpOpen} closePop={() => setIsPopUpOpen(false)} search={search} handleSearch={handleSearch}>
             {popContent}
         </ETFPopUp>
-        <form onSubmit={handleSubmit} >
+        <form onSubmit={handleSubmit} className="etf-form">
+            <h3>Edit ETF</h3>
             <label htmlFor="name">Name: </label>
-            <input id="name" name="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required></input><br/>
+            <input id="name" name="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required /><br/>
             <label htmlFor="description">Description: </label>
             <input id="description" name="description" type="text"
-            value={description} onChange={(e) => setDescription(e.target.value)}></input><br/>
+            value={description} onChange={(e) => setDescription(e.target.value)} /><br/>
             <label htmlFor="holdings">Holdings</label>
             {content}
             <button type="button" onClick={addHoldings}>Add Holdings</button><br/>
+            <button type="submit">Save Changes</button>
         </form>
     </div>}
     </div>

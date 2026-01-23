@@ -1,13 +1,16 @@
 import { useState, useEffect, SetStateAction, ChangeEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import './ETFManage.css';
 
 function ETFPage() {
+    const navigate = useNavigate();
     const [content, setContent] = useState(<div></div>);
     const [loading, setLoading] = useState(true);
     const [funds, setFunds] = useState([]);
     const [page, setPage] = useState(0);
     const [search, setSearch] = useState("");
 
-    const tabLinks = ["/api/funds/funds/", "/api/fund/subscriptions", "/api/funds/subscriptions/unsubscribed/"];
+    const tabLinks = ["/api/funds/funds/", "/api/funds/subscriptions/", "/api/funds/subscriptions/unsubscribed/"];
 
     useEffect(() => {
         setLoading(true);
@@ -33,18 +36,22 @@ function ETFPage() {
             x.name.toLowerCase().includes(search) || 
             x.description.toLowerCase().includes(search))
         if (res.length === 0) {
-            setContent(<div>No ETFs found</div>);
+            setContent(<div className="empty">No ETFs found</div>);
         }
         else {setContent(<table>
-        <tr><th>Name</th><th>Description</th><th>NAV per unit</th></tr>
+        <thead>
+            <tr><th>Name</th><th>Description</th><th>NAV per unit</th></tr>
+        </thead>
+        <tbody>
         {res.map((x: any) => (
-            <a href={"/ETF/"+x.id}><tr>
+            <tr key={x.id} onClick={() => navigate("/ETF/"+x.id)} style={{cursor: "pointer"}}>
                 <td>{x.name}</td>
                 <td style={{overflow: "hidden"}}>{x.description}</td>
                 <td>{x.nav_per_unit}</td>
-            </tr></a>
+            </tr>
         ))}
-        {page === 0? <tr><a href="/ETF/create"><button>Create new ETF</button></a></tr> : null}
+        {page === 0? <tr key="create-btn"><td colSpan={3}><button onClick={() => navigate("/ETF/create")}>Create new ETF</button></td></tr> : null}
+        </tbody>
         </table>)}
 
         setLoading(false);
@@ -59,11 +66,11 @@ function ETFPage() {
         setSearch(value);
     }
 
-    return(<div>
+    return(<div className="etf-container">
         <div className="tab">
-            <button className="tablinks" onClick={() =>openTab(0)}>My ETFs</button>
-            <button className="tablinks" onClick={() =>openTab(1)}>Subscribed</button>
-            <button className="tablinks" onClick={() =>openTab(2)}>Explore</button>
+            <button className={`tablinks ${page === 0 ? 'active' : ''}`} onClick={() =>openTab(0)}>My ETFs</button>
+            <button className={`tablinks ${page === 1 ? 'active' : ''}`} onClick={() =>openTab(1)}>Subscribed</button>
+            <button className={`tablinks ${page === 2 ? 'active' : ''}`} onClick={() =>openTab(2)}>Explore</button>
         </div>
         <div>
             <div className="search-bar">
@@ -75,6 +82,6 @@ function ETFPage() {
                 />
             </div>
         </div>
-        {loading ? <div>Loading...</div> : content}
+        {loading ? <div className="loading">Loading...</div> : content}
     </div>)
 } export default ETFPage;

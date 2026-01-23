@@ -33,8 +33,8 @@ function ETFPage() {
         setLoading(true);
 
         const res = funds.filter((x: any) => 
-            x.name.toLowerCase().includes(search) || 
-            x.description.toLowerCase().includes(search))
+            (x.name || '').toLowerCase().includes(search) ||
+            (x.description || '').toLowerCase().includes(search))
         if (res.length === 0) {
             setContent(<div className="empty">No ETFs found</div>);
         }

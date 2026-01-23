@@ -6,6 +6,9 @@ import PortfolioPage from "../pages/PortofolioPage.tsx";
 import Layout from "../components/Layout.tsx";
 import QuotePage from "../pages/QuotePage.tsx";
 import ExchangePage from "../pages/ExplorePage.tsx";
+import Licence  from "../pages/Licence.tsx";
+import DocsLayout from "../pages/Docs.tsx";
+import Leaderboard from "../pages/Leaderboard.tsx";
 import ETFCreate from "../pages/ETFCreate.tsx";
 import ETFOverview from "../pages/ETFOverview.tsx";
 import ETFEdit from "../pages/ETFEdit.tsx";
@@ -121,6 +124,20 @@ const AppRouter: React.FC = () => {
                     }
                 />
 
+                <Route
+                    path="/leaderboard"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Leaderboard />
+                            </Layout>
+                        </ProtectedRoute>
+                            }
+                />
+
+                    
+
+                <Route path="*" element={<PageNotFound />} />
             </Routes>
         </Router>
     );

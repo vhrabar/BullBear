@@ -36,6 +36,30 @@ function Layout({children}: LayoutProps) {
                 </nav>
             </aside>
 
+        <nav className="side-nav">
+          <Link to="/positions" className="side-link">
+            Portfolio
+          </Link>
+            <Link to="/explore" className="side-link">
+            Explore
+          </Link>
+          <Link to="/leaderboard" className={`side-link ${location.pathname === '/leaderboard' ? 'active' : ''}`}>
+            Leaderboard 🏆
+          </Link>
+        </nav>
+      </aside>
+
+      <div className="main-area">
+        <header className="top-bar">
+          <div className="top-title">Trading Dashboard</div>
+        </header>
+
+        <main className="main-content">{children}</main>
+
+        <Footer />
+      </div>
+    </div>
+  );
             <div className="main-area">
                 <header className="top-bar">
                     <div className="top-title">Trading Dashboard</div>

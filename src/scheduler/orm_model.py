@@ -1,9 +1,11 @@
 from datetime import datetime
-from sqlalchemy.orm import declarative_base, mapped_column, Mapped
+from sqlalchemy.orm import declarative_base, mapped_column, Mapped, relationship
 from sqlalchemy import (
     Integer, String, DateTime, Numeric, BigInteger,
-    ForeignKey, UniqueConstraint, Index, Boolean
+    ForeignKey, UniqueConstraint, Index, Boolean, DECIMAL
 )
+from decimal import Decimal
+
 
 Base = declarative_base()
 
@@ -79,3 +81,114 @@ class Instrument(Base):
     exchange: Mapped[str] = mapped_column(String(32), nullable=True)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class Order(Base):
+    __tablename__ = "orders_order"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    portfolio_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    instrument_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+
+    side: Mapped[str] = mapped_column(String(4), nullable=False)  # BUY/SELL
+    order_type: Mapped[str] = mapped_column(String(16), nullable=False)  # MARKET/LIMIT/STOP/STOP_LIMIT
+    time_in_force: Mapped[str] = mapped_column(String(8), nullable=False, default="GTC")
+
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
+    filled_quantity: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False, default=0)
+
+    limit_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 6), nullable=True)
+    stop_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 6), nullable=True)
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+
+    avg_fill_price: Mapped[Decimal | None] = mapped_column(Numeric(20, 6), nullable=True)
+
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    placed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class OrderFill(Base):
+    __tablename__ = "orders_orderfill"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders_order.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
+    price: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
+
+    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class UserPortfolio(Base):
+    __tablename__ = "users_userportfolio"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    balance: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class PortfolioHolding(Base):
+    __tablename__ = "trading_portfolioholding"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    portfolio_id: Mapped[int] = mapped_column(
+        ForeignKey("users_userportfolio.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    instrument_id: Mapped[int] = mapped_column(
+        ForeignKey("trag_instrument.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 4), nullable=False)
+    average_price: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
+
+    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("portfolio_id", "instrument_id", name="portfolio_instrument_unique"),
+    )
+
+
+class PortfolioSnapshot(Base):
+    __tablename__ = "users_portfoliosnapshot"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    portfolio_id: Mapped[int] = mapped_column(ForeignKey("trading_userportfolio.id", ondelete="CASCADE"), index=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    cash_balance: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
+    equity_value: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
+    total_value: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("10000.00"))
+
+    unrealized_pl: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("0.00"))
+    unrealized_pl_pct: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
+
+    realized_pl: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False, default=Decimal("0.00"))
+    realized_pl_pct: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
+
+    __table_args__ = (
+        UniqueConstraint("portfolio_id", "ts", name="portfolio_ts_unique_idx"),
+        Index("portfolio_ts_idx", "portfolio_id", "ts"),
+    )

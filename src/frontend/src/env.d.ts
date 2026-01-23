@@ -3,5 +3,3 @@ declare namespace NodeJS {
     REACT_APP_ENV?: "development" | "production";
   }
 }
-
-declare module "*.css";

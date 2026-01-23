@@ -1,13 +1,22 @@
 import traceback
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Optional, List, Dict
+from typing import Any
 
-from sqlalchemy import create_engine, desc
+from sqlalchemy import create_engine, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.dialects.postgresql import insert
-from orm_model import InstrumentQuote, InstrumentIntervalData, Instrument, Fund, FundHolding, FundNAVHistory
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+
+from orm_model import (
+    InstrumentQuote,
+    InstrumentIntervalData,
+    Instrument,
+    Order as ORMOrder,
+    OrderFill as ORMOrderFill, PortfolioHolding, UserPortfolio, PortfolioSnapshot,
+)
+
 from configuration import settings
 
 
@@ -121,125 +130,149 @@ class MarketDataRepository:
             print(type(exc).__name__, str(exc))
             traceback.print_exc()
 
-    # Fund NAV Methods
     @staticmethod
-    def get_active_funds() -> List[Dict]:
-        """Get all active funds."""
-        try:
-            with SessionLocal() as session:
-                funds = session.query(Fund).filter(Fund.is_active == True).all()
-                return [
-                    {
-                        'id': f.id,
-                        'name': f.name,
-                        'nav_per_unit': f.nav_per_unit,
-                        'total_units': f.total_units
-                    }
-                    for f in funds
-                ]
-        except SQLAlchemyError as exc:
-            print(f"[ERROR] Failed to get active funds: {exc}")
-            return []
+    def load_open_orders():
+        with SessionLocal() as session:
+            stmt = (
+                select(ORMOrder)
+                .where(ORMOrder.status.in_(["OPEN", "PARTIALLY_FILLED"]))
+            )
+            return list(session.execute(stmt).scalars().all())
 
     @staticmethod
-    def get_fund_holdings(fund_id: int) -> List[Dict]:
-        """Get all holdings for a fund."""
-        try:
-            with SessionLocal() as session:
-                holdings = session.query(FundHolding).filter(
-                    FundHolding.fund_id == fund_id
-                ).all()
-                return [
-                    {
-                        'id': h.id,
-                        'instrument_id': h.instrument_id,
-                        'weight_percent': h.weight_percent
-                    }
-                    for h in holdings
-                ]
-        except SQLAlchemyError as exc:
-            print(f"[ERROR] Failed to get fund holdings: {exc}")
-            return []
+    def get_latest_prices_for_instruments(symbols: list[str]) -> dict[str, float]:
+        if not symbols:
+            return {}
+
+        symbols = [s.upper() for s in symbols]
+
+        with SessionLocal() as session:
+            stmt = (
+                select(Instrument.symbol, InstrumentQuote.last_price)
+                .join(InstrumentQuote, InstrumentQuote.instrument_id == Instrument.id)
+                .where(Instrument.symbol.in_(symbols))
+            )
+            rows = session.execute(stmt).all()
+            return {symbol.upper(): float(last_price) for symbol, last_price in rows}
 
     @staticmethod
-    def get_latest_price(instrument_id: int) -> Optional[Decimal]:
-        """Get the latest close price for an instrument."""
-        try:
-            with SessionLocal() as session:
-                candle = session.query(InstrumentIntervalData).filter(
-                    InstrumentIntervalData.instrument_id == instrument_id
-                ).order_by(desc(InstrumentIntervalData.start_time)).first()
+    def create_fill_and_update_order(order_id: int, fill_qty, fill_price):
+        now = datetime.now(tz=timezone.utc)
 
-                if candle:
-                    return Decimal(str(candle.close_price))
-                return None
-        except SQLAlchemyError as exc:
-            print(f"[ERROR] Failed to get latest price: {exc}")
-            return None
+        with SessionLocal() as session:
+            # insert fill
+            fill = ORMOrderFill(
+                order_id=order_id,
+                quantity=fill_qty,
+                price=fill_price,
+                executed_at=now,
+                created_at=now,
+            )
+            session.add(fill)
+
+            # update order quantities & avg fill price
+            order = session.get(ORMOrder, order_id)
+            prev_qty = float(order.filled_quantity)
+            new_qty = prev_qty + float(fill_qty)
+
+            # weighted avg
+            if prev_qty == 0:
+                avg = float(fill_price)
+            else:
+                avg = (float(order.avg_fill_price) * prev_qty + float(fill_price) * float(fill_qty)) / new_qty
+
+            order.filled_quantity = new_qty
+            order.avg_fill_price = avg
+            order.revision += 1
+
+            if new_qty >= float(order.quantity):
+                order.status = "FILLED"
+                order.closed_at = now
+            else:
+                order.status = "PARTIALLY_FILLED"
+
+            order.updated_at = now
+
+            session.commit()
 
     @staticmethod
-    def get_base_price(instrument_id: int, fund_id: int) -> Optional[Decimal]:
+    def create_snapshots_for_instrument(session, instrument_id: int, ts: datetime):
         """
-        Get the base price for an instrument when the fund was created.
-        Uses the oldest NAV history record or falls back to oldest price data.
+        Create snapshots for portfolios affected by instrument_id
+        at snapshot timestamp ts
         """
-        try:
-            with SessionLocal() as session:
-                # Try to get the first NAV history record date for the fund
-                first_nav = session.query(FundNAVHistory).filter(
-                    FundNAVHistory.fund_id == fund_id
-                ).order_by(FundNAVHistory.recorded_at).first()
 
-                if first_nav:
-                    # Get price around that time
-                    candle = session.query(InstrumentIntervalData).filter(
-                        InstrumentIntervalData.instrument_id == instrument_id,
-                        InstrumentIntervalData.start_time <= first_nav.recorded_at
-                    ).order_by(desc(InstrumentIntervalData.start_time)).first()
+        portfolio_ids = session.execute(
+            select(PortfolioHolding.portfolio_id)
+            .where(PortfolioHolding.instrument_id == instrument_id)
+            .distinct()
+        ).scalars().all()
 
-                    if candle:
-                        return Decimal(str(candle.close_price))
+        if not portfolio_ids:
+            return
 
-                # Fallback: get the oldest price we have
-                oldest_candle = session.query(InstrumentIntervalData).filter(
-                    InstrumentIntervalData.instrument_id == instrument_id
-                ).order_by(InstrumentIntervalData.start_time).first()
+        cash_rows = session.execute(
+            select(UserPortfolio.id, UserPortfolio.balance)
+            .where(UserPortfolio.id.in_(portfolio_ids))
+            .where(UserPortfolio.is_active.is_(True))
+        ).all()
+        cash_map = {pid: Decimal(bal) for pid, bal in cash_rows}
 
-                if oldest_candle:
-                    return Decimal(str(oldest_candle.close_price))
+        if not cash_map:
+            return
 
-                return None
-        except SQLAlchemyError as exc:
-            print(f"[ERROR] Failed to get base price: {exc}")
-            return None
+        rows = session.execute(
+            select(
+                PortfolioHolding.portfolio_id,
+                PortfolioHolding.quantity,
+                PortfolioHolding.average_price,
+                InstrumentQuote.last_price,
+            )
+            .join(InstrumentQuote, InstrumentQuote.instrument_id == PortfolioHolding.instrument_id)
+            .where(PortfolioHolding.portfolio_id.in_(list(cash_map.keys())))
+        ).all()
 
-    @staticmethod
-    def update_fund_nav(fund_id: int, nav_per_unit: Decimal):
-        """Update the current NAV per unit for a fund."""
-        try:
-            with SessionLocal() as session:
-                fund = session.query(Fund).filter(Fund.id == fund_id).first()
-                if fund:
-                    fund.nav_per_unit = nav_per_unit
-                    fund.updated_at = datetime.now(tz=timezone.utc)
-                    session.commit()
-        except SQLAlchemyError as exc:
-            print(f"[ERROR] Failed to update fund NAV: {exc}")
-            traceback.print_exc()
+        agg = {}
+        for pid, qty, avg_price, last_price in rows:
+            pid = int(pid)
+            qty = Decimal(qty)
+            avg_price = Decimal(avg_price)
+            last_price = Decimal(last_price)
 
-    @staticmethod
-    def record_nav_history(fund_id: int, nav_per_unit: Decimal, total_units: Decimal):
-        """Record a NAV history entry for performance tracking."""
-        try:
-            with SessionLocal() as session:
-                history = FundNAVHistory(
-                    fund_id=fund_id,
-                    nav_per_unit=nav_per_unit,
-                    total_units=total_units
-                )
-                session.add(history)
-                session.commit()
-        except SQLAlchemyError as exc:
-            print(f"[ERROR] Failed to record NAV history: {exc}")
-            traceback.print_exc()
+            if pid not in agg:
+                agg[pid] = {"equity": Decimal("0"), "cost": Decimal("0"), "unrl": Decimal("0")}
 
+            agg[pid]["equity"] += qty * last_price
+            agg[pid]["cost"] += qty * avg_price
+            agg[pid]["unrl"] += qty * (last_price - avg_price)
+
+        for pid in cash_map.keys():
+            cash = cash_map[pid]
+            equity = agg.get(pid, {}).get("equity", Decimal("0"))
+            cost = agg.get(pid, {}).get("cost", Decimal("0"))
+            unrl = agg.get(pid, {}).get("unrl", Decimal("0"))
+
+            total = cash + equity
+
+            unrl_pct = Decimal("0")
+            if cost > 0:
+                unrl_pct = (unrl / cost) * Decimal("100")
+
+            payload = {
+                "portfolio_id": pid,
+                "ts": ts,
+                "cash_balance": cash.quantize(Decimal("0.01")),
+                "equity_value": equity.quantize(Decimal("0.01")),
+                "total_value": total.quantize(Decimal("0.01")),
+                "unrealized_pl": unrl.quantize(Decimal("0.01")),
+                "unrealized_pl_pct": unrl_pct.quantize(Decimal("0.0001")),
+                "realized_pl": Decimal("0.00"),
+                "realized_pl_pct": Decimal("0.0000"),
+            }
+
+            stmt = insert(PortfolioSnapshot).values(payload)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["portfolio_id", "ts"],
+                set_={k: v for k, v in payload.items() if k not in ("portfolio_id", "ts")}
+            )
+            session.execute(stmt)

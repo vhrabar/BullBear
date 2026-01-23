@@ -16,15 +16,19 @@ function Layout({children}: LayoutProps) {
                     <span className="logo-text">BullBear</span>
                 </div>
 
-        <nav className="side-nav">
-          <Link to="/positions" className="side-link">
-            Portfolio
-          </Link>
-            <Link to="/explore" className="side-link">
-            Explore
-          </Link>
-        </nav>
-      </aside>
+                <nav className="side-nav">
+                    <Link to="/positions" className="side-link">
+                        Portfolio
+                    </Link>
+                    <Link to="/explore" className="side-link">
+                        Explore
+                    </Link>
+                     <Link to="/etf/explore" className="side-link">
+                        Funds
+                    </Link>
+
+                </nav>
+            </aside>
 
             <div className="main-area">
                 <header className="top-bar">
@@ -33,10 +37,10 @@ function Layout({children}: LayoutProps) {
 
                 <main className="main-content">{children}</main>
 
-        <Footer />
-      </div>
-    </div>
-  );
+                <Footer/>
+            </div>
+        </div>
+    );
 }
 
 export default Layout;

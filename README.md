@@ -65,34 +65,8 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
 
 
 # Instalacija
-## Kloniranje repozitorija
-```bash
-git clone git@github.com:vhrabar/BullBear.git
-cd BullBear
-```
 
-## Uređivanje varijabli
-Nakon unosa svih potrebnih varijabli (Google OAuth, MS OAuth, finnhub.io, baza podataka,...) u `.env.example`
-```bash
-cp .env.example .env
-```
-
-## Pokretanje 
-```bash
-docker compose up --build
-```
-
-## Postavljanje baze
-```bash
-docker compose exec backend python manage.py migrate
-docker compose exec backend python manage.py createsuperuser
-```
-
-## (Opcionalno) Pokretanje testova
-```bash
-docker compose exec backend pytest
-docker compose exec frontend npm test
-```
+Pogledajte [Upute za instalaciju](https://github.com/vhrabar/BullBear/wiki/8.--Upute-za-pu%C5%A1tanje-u-pogon/_edit)
 
 
 # Članovi tima 

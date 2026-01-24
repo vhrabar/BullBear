@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import StockPanel from "../components/StockPanel.tsx";
+import { toggleFavorite, checkFavorite } from "../api/favorites";
 
 interface Holding {
   id: number;
@@ -38,13 +39,62 @@ interface Candle {
   updated_at: string;
 }
 
+interface NewsItem {
+  id: number;
+  headline: string;
+  published_at: string;
+  url?: string;
+}
+
+interface EarningsReport {
+  id: number;
+  company: string;
+  report_date: string;
+  fiscal_quarter: string;
+  fiscal_year: number;
+  estimate_eps: string | null;
+  actual_eps: string | null;
+}
+
+interface Dividend {
+  id: number;
+  company: string;
+  ex_date: string;
+  payment_date: string;
+  dividend_amount: string;
+  currency: string;
+}
+
+
 function QuotePage() {
   const { symbol } = useParams();
   const [holding, setHolding] = useState<Holding | null>(null);
   const [latestQuote, setLatestQuote] = useState<LatestQuote | null>(null);
   const [candle, setCandle] = useState<Candle | null>(null);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [earnings, setEarnings] = useState<EarningsReport[]>([]);
+  const [dividends, setDividends] = useState<Dividend[]>([]);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [instrumentId, setInstrumentId] = useState<number | null>(null);
 
-  // Fetch holding .> if in port
+  // Fetch instrument ID and check if favorited
+  useEffect(() => {
+    if (!symbol) return;
+
+    fetch(`/api/trading/instruments/${symbol}/`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.id) {
+          setInstrumentId(data.id);
+          checkFavorite(data.id).then(setIsFavorite).catch(() => setIsFavorite(false));
+        }
+      })
+      .catch(() => setInstrumentId(null));
+  }, [symbol]);
+
+  // Fetch holding if in portfolio
   useEffect(() => {
     if (!symbol) return;
 
@@ -85,12 +135,44 @@ function QuotePage() {
       .catch(() => setCandle(null));
   }, [symbol]);
 
+  // Fetch latest company news (latest 3)
+ useEffect(() => {
+  if (!symbol) return;
+
+  fetch(`/api/trading/news/?companies__ticker=${symbol}&ordering=-published_at&limit=3`, {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => setNews(data.results || []))
+    .catch(() => setNews([]));
+}, [symbol]);
+
+
+  useEffect(() => {
+  if (!symbol) return;
+
+  // Earnings
+  fetch(`/api/trading/earnings-reports/?company__ticker=${symbol}&ordering=report_date`, {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => setEarnings(data || []))
+    .catch(() => setEarnings([]));
+
+  // Dividends
+  fetch(`/api/trading/dividends/?company__ticker=${symbol}&ordering=ex_date`, {
+    credentials: "include",
+  })
+    .then((res) => res.json())
+    .then((data) => setDividends(data || []))
+    .catch(() => setDividends([]));
+}, [symbol]);
+
   // Build the instrument info for StockPanel
   const stock =
     symbol
       ? {
           symbol: symbol.toUpperCase(),
-
           name:
             holding?.instrument
               ?.split("(")[1]
@@ -99,8 +181,28 @@ function QuotePage() {
         }
       : null;
 
+  const handleToggleFavorite = async () => {
+    if (!instrumentId) return;
+    try {
+      const result = await toggleFavorite(instrumentId);
+      setIsFavorite(result.is_favorite);
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+    }
+  };
+
   return (
     <div className="portfolio-page">
+      <div className="quote-header-actions">
+        <button
+          className={`quote-fav-btn ${isFavorite ? "is-favorite" : ""}`}
+          onClick={handleToggleFavorite}
+          disabled={!instrumentId}
+          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFavorite ? "★ Favorited" : "☆ Add to Favorites"}
+        </button>
+      </div>
       <StockPanel
         stock={stock}
         holding={holding}
@@ -111,6 +213,9 @@ function QuotePage() {
           low_price: candle?.low_price,
           close_price: candle?.close_price,
         }}
+        news={news}
+         earnings={earnings}
+        dividends={dividends}
       />
     </div>
   );

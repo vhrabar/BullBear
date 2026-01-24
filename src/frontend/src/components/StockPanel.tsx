@@ -1,8 +1,12 @@
 import { useState } from "react";
 import TradeDialog from "./TradeDialog.tsx";
+import type { EarningsReport, Dividend } from "../types/stocks";
 
 
-import "./StockPanel.css";
+import "../styles/StockPanel.css";
+import StockChart from "./StockChart.tsx";
+import TransactionHistory from "./TransactionHistory";
+
 
 interface Instrument {
   symbol: string;
@@ -36,10 +40,27 @@ interface StockPanelProps {
   stock: Instrument | null;
   holding?: Holding | null;
   latest?: LatestData | null;
+  earnings?: EarningsReport[];
+  dividends?: Dividend[];
+}
+
+interface NewsItem {
+  id: number;
+  headline: string;
+   content?: string;
+  published_at: string;
+  url?: string;
+}
+
+interface StockPanelProps {
+  stock: Instrument | null;
+  holding?: Holding | null;
+  latest?: LatestData | null;
+  news?: NewsItem[];
 }
 
 
-function StockPanel({ stock, holding, latest }: StockPanelProps) {
+function StockPanel({ stock, holding, latest, news, earnings, dividends }: StockPanelProps) {
     if (!stock) {
         return (
             <div className="stock-panel empty">
@@ -53,6 +74,8 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
     const ticker = stock.symbol;
     const company = stock.name;
     const [tradeType, setTradeType] = useState<"buy" | "sell" | null>(null);
+    const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+
 
 
 
@@ -88,8 +111,8 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
                 <div className="stock-main-left">
 
                     <div className="chart-placeholder">
-                        <div className="chart-title">Price chart (placeholder)</div>
-                        <div className="chart-body"></div>
+                        <div className="chart-title">Price chart</div>
+                        <StockChart instrument={stock.symbol} />
                     </div>
 
                     <div className="metrics-card">
@@ -151,37 +174,74 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
 
                 <div className="stock-main-right">
                     <section className="panel-section">
-                        <h3>Hot News</h3>
-                        <ul className="simple-list">
-                            <li>News 1 about {ticker} (placeholder)</li>
-                            <li>News 2 about {ticker} (placeholder)</li>
-                            <li>News 3 about {ticker} (placeholder)</li>
-                        </ul>
+                      <h3>Hot News</h3>
+                      <ul className="simple-list">
+                        {news && news.length > 0 ? (
+                          news.slice(0, 3).map((item) => (
+                            <li key={item.id}>
+                              {item.url ? (
+                                <a href={item.url} target="_blank" rel="noopener noreferrer">
+                                  {item.headline}
+                                </a>
+                              ) : (
+                                <span>{item.headline}</span>
+                              )}
+                              <small>({new Date(item.published_at).toLocaleDateString()})</small>
+                              {item.content && (
+                                <p className="news-content">
+                                  {item.content}
+                                </p>
+                              )}
+                            </li>
+                          ))
+                        ) : (
+                          <li>No news available</li>
+                        )}
+                      </ul>
                     </section>
 
-                    <section className="panel-section">
-                        <h3>Upcoming Events</h3>
-                        <ul className="simple-list">
-                            <li>Earnings – placeholder date</li>
-                            <li>Options expiry – placeholder</li>
-                        </ul>
+                   <section className="panel-section">
+                      <h3>Upcoming Earnings</h3>
+                      <ul className="simple-list">
+                        {earnings && earnings.length > 0 ? (
+                          earnings.map((item) => (
+                            <li key={item.id}>
+                              {item.fiscal_quarter} {item.fiscal_year} –{" "}
+                              {new Date(item.report_date).toLocaleDateString()} |
+                              Estimate EPS: {item.estimate_eps ?? "—"}{" "}
+                              {item.actual_eps !== null && (
+                                <span style={{ color: "#34d399" }}>| Actual EPS: {item.actual_eps}</span>
+                              )}
+                            </li>
+                          ))
+                        ) : (
+                          <li>No earnings scheduled</li>
+                        )}
+                      </ul>
                     </section>
                 </div>
             </div>
 
             <div className="stock-panel-bottom">
                 <section className="panel-section">
-                    <h3>Transaction History</h3>
-                    <div className="history-placeholder">
-                        No history implemented yet.
-                    </div>
+                    <TransactionHistory symbol={ticker} refreshKey={historyRefreshKey} />
                 </section>
 
                 <section className="panel-section">
-                    <h3>Dividends</h3>
-                    <div className="history-placeholder">
-                        Dividend data placeholder.
-                    </div>
+                  <h3>Upcoming Dividends</h3>
+                  <ul className="simple-list">
+                    {dividends && dividends.length > 0 ? (
+                      dividends.map((item) => (
+                        <li key={item.id}>
+                          Ex-Date: {new Date(item.ex_date).toLocaleDateString()} | Amount:{" "}
+                          {item.dividend_amount} {item.currency} | Payment Date:{" "}
+                          {new Date(item.payment_date).toLocaleDateString()}
+                        </li>
+                      ))
+                    ) : (
+                      <li>No dividends scheduled</li>
+                    )}
+                  </ul>
                 </section>
             </div>
 
@@ -192,15 +252,12 @@ function StockPanel({ stock, holding, latest }: StockPanelProps) {
                 price={Number(latest.last_price || latest.ask_price || latest.close_price)}
                 onClose={() => setTradeType(null)}
                 onSuccess={() => {
-                    console.log("Trade completed successfully.");
+                    setHistoryRefreshKey((k) => k + 1);
                 }}
             />
         )}
 
         </div>
-
-
-
     );
 }
 

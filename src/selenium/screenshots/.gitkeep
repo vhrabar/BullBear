@@ -1,0 +1,4 @@
+# This directory stores test screenshots
+# Screenshots are automatically generated during test execution
+# Format: {test_name}_{timestamp}.png
+

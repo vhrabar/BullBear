@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
-from .models import User, UserProfile, UserPortfolio
+from .models import User, UserProfile, UserPortfolio, ContactMessage, PortfolioSnapshot
 
 
 @admin.register(User)
@@ -60,3 +60,93 @@ class UserPortfolioAdmin(admin.ModelAdmin):
     list_display = ('name', 'user', 'created_at', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name', 'user__user__username')
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = (
+        "created_at",
+        "email",
+        "full_name",
+        "subject",
+        "user",
+        "ip_address",
+    )
+
+    list_filter = (
+        "created_at",
+        "user",
+    )
+
+    search_fields = (
+        "email",
+        "full_name",
+        "subject",
+        "message",
+        "ip_address",
+        "user_agent",
+        "user__user__username",
+        "user__user__email",
+    )
+
+    ordering = ("-created_at",)
+
+    list_select_related = ("user",)
+
+    list_display_links = ("created_at", "email", "subject")
+
+    readonly_fields = (
+        "user",
+        "full_name",
+        "email",
+        "subject",
+        "message",
+        "created_at",
+        "ip_address",
+        "user_agent",
+    )
+
+    fieldsets = (
+        ("Message", {
+            "fields": ("full_name", "email", "subject", "message"),
+        }),
+        ("Metadata", {
+            "fields": ("user", "created_at", "ip_address", "user_agent"),
+        }),
+    )
+
+@admin.register(PortfolioSnapshot)
+class PortfolioSnapshotAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "portfolio",
+        "ts",
+        "cash_balance",
+        "equity_value",
+        "total_value",
+        "unrealized_pl",
+        "unrealized_pl_pct",
+    )
+
+    list_filter = (
+        "ts",
+        "portfolio",
+    )
+
+    search_fields = (
+        "portfolio__name",
+        "portfolio__user__user__username",
+        "portfolio__user__user__email",
+    )
+
+    ordering = ("-ts",)
+
+    readonly_fields = ("id",)
+
+    date_hierarchy = "ts"
+
+    list_select_related = ("portfolio",)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("portfolio")

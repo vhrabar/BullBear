@@ -12,7 +12,7 @@ DEBUG = False   # overridden later
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    'jazzmin',
+    #'jazzmin',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,11 +23,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'django_extensions',
+    'django_filters',
 
     'api.main',
     'api.users',
     'api.trading',
     'api.payment',
+    'api.funds',
+    'api.orders',
+    'api.leaderboard',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -122,7 +126,12 @@ REST_FRAMEWORK = {
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-    ]
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
 }
 
 

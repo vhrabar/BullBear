@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import './Hero.css'
+import '../styles/Hero.css'
 
 function Hero() {
   return (
@@ -11,8 +11,8 @@ function Hero() {
             <span className="logo-text">BullBear</span>
           </div>
           <div className="nav-links">
-            <a href="#features">Značajke</a>
-            <a href="#about">O projektu</a>
+            <a href="/features">Značajke</a>
+            <a href="/about">O projektu</a>
             <Link to="/login" className="nav-btn">Prijava</Link>
           </div>
         </div>

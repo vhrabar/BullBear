@@ -19,6 +19,9 @@ class Settings:
 
     TEST_MODE: bool = os.getenv("TESTING", "false").lower() == "true"
 
+    DJANGO_API_BASE_URL: str = os.getenv("DJANGO_API_BASE_URL", "http://localhost:8000")
+    DJANGO_SERVICE_TOKEN: str = os.getenv("DJANGO_SERVICE_TOKEN")
+
     def __post_init__(self):
         self.DB_URL = (
             f"postgresql+psycopg2://{self.DB_USER}:"

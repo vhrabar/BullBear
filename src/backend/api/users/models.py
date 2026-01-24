@@ -101,3 +101,52 @@ class UserPortfolio(models.Model):
     def __str__(self):
         return f"{self.name} ({self.user.user.username})"
 
+
+class ContactMessage(models.Model):
+    """
+    Stores submitted contact messages.
+    """
+    user = models.ForeignKey(
+        UserProfile,
+        on_delete=models.SET_NULL,
+        related_name="contact_messages",
+        null=True,
+        blank=True,
+    )
+
+    full_name = models.CharField(max_length=150)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+
+    def __str__(self) -> str:
+        return f"[{self.created_at:%Y-%m-%d %H:%M}] {self.email} - {self.subject}"
+
+
+class PortfolioSnapshot(models.Model):
+    portfolio = models.ForeignKey(UserPortfolio, on_delete=models.CASCADE, related_name="snapshots")
+    ts = models.DateTimeField(db_index=True)
+
+    cash_balance = models.DecimalField(max_digits=20, decimal_places=2, default=10000)
+    equity_value = models.DecimalField(max_digits=20, decimal_places=2, default=10000)
+    total_value = models.DecimalField(max_digits=20, decimal_places=2, default=10000)
+
+    unrealized_pl = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    unrealized_pl_pct = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+
+    realized_pl = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    realized_pl_pct = models.DecimalField(max_digits=10, decimal_places=4, default=0)
+
+
+    class Meta:
+        unique_together = ("portfolio", "ts")
+        indexes = [
+            models.Index(fields=["portfolio", "ts"]),
+        ]
+
+
+

@@ -1,0 +1,213 @@
+/* Page wrapper like dashboard content zone */
+.contact-page {
+  padding: 1.75rem 2rem;
+  background: transparent;
+}
+
+/* Card should NOT be centered, it should look like your panels */
+.contact-card {
+  width: min(820px, 100%);
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid #1f2937;
+  border-radius: 0.9rem;
+  color: #f3f4f6;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+/* Header */
+.contact-header {
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid #1f2937;
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.contact-title {
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.contact-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  color: rgba(156, 163, 175, 0.95);
+}
+
+/* Form */
+.contact-form {
+  padding: 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+/* Grid consistent with "panel" look */
+.contact-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 720px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.contact-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.contact-label {
+  font-size: 0.78rem;
+  color: rgba(156, 163, 175, 0.95);
+  font-weight: 700;
+}
+
+/* Inputs */
+.contact-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(31, 41, 55, 0.95);
+  background: rgba(10, 15, 31, 0.9);
+  padding: 0.82rem 0.95rem;
+  color: #e5e7eb;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+    transform 0.08s ease;
+}
+
+.contact-input::placeholder {
+  color: rgba(156, 163, 175, 0.5);
+}
+
+.contact-input:focus {
+  border-color: rgba(59, 130, 246, 0.9);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.13);
+  transform: translateY(-1px);
+}
+
+.contact-textarea {
+  min-height: 170px;
+  resize: vertical;
+}
+
+/* Alerts */
+.contact-alert {
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(31, 41, 55, 0.95);
+  background: rgba(10, 15, 31, 0.92);
+}
+
+.contact-alert--error {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.contact-alert--success {
+  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* Buttons like stock panel */
+.contact-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.contact-btn {
+  padding: 0.7rem 1.05rem;
+  border-radius: 0.75rem;
+  border: 1px solid #1f2937;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.contact-btn--primary {
+  background: rgba(37, 99, 235, 0.18);
+  color: #e5e7eb;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s ease;
+}
+
+.contact-btn--primary:hover {
+  background: rgba(37, 99, 235, 0.28);
+  transform: translateY(-1px);
+}
+
+.contact-btn--neutral {
+  background: rgba(10, 15, 31, 0.92);
+  color: rgba(156, 163, 175, 0.95);
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s ease;
+}
+
+.contact-btn--neutral:hover {
+  background: rgba(30, 41, 59, 0.75);
+  transform: translateY(-1px);
+}
+
+.contact-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading / error screen blocks */
+.contact-state {
+  width: min(820px, 100%);
+  margin: 1.75rem 2rem;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid #1f2937;
+  border-radius: 0.9rem;
+  padding: 1.4rem;
+  color: rgba(156, 163, 175, 0.95);
+  backdrop-filter: blur(6px);
+}
+
+.contact-state--error {
+  color: #e5e7eb;
+}
+
+.contact-state__title {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.35rem;
+}
+
+.contact-state__desc {
+  color: #fecaca;
+  margin-bottom: 1rem;
+}
+
+.contact-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.25rem 2rem;
+}
+
+.contact-page {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.contact-card {
+  width: min(860px, 100%);
+}

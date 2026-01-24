@@ -1,6 +1,7 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import "./ExplorePage.css";
+import { toggleFavorite } from "../api/favorites";
+import "../styles/ExplorePage.css";
 
 interface InstrumentItem {
     id: number;
@@ -28,6 +29,7 @@ interface CandleData {
 interface InstrumentExtended extends InstrumentItem {
     latestCandle?: CandleData | null;
     ask?: number | null;
+    isFavorite?: boolean;
 }
 
 function ExchangePage() {
@@ -36,23 +38,37 @@ function ExchangePage() {
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [, setFavoriteIds] = useState<Set<number>>(new Set());
 
     const navigate = useNavigate();
 
-    // Load instruments
+    // Load instruments and favorites
     useEffect(() => {
-        fetch("/api/trading/instruments/", {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-        })
-            .then(async (res) => {
+        Promise.all([
+            fetch("/api/trading/instruments/", {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            }).then(res => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
-            })
-            .then((data) => {
-                setInstruments(data);
-                setFiltered(data);
+            }),
+            fetch("/api/trading/favorites/", {
+                method: "GET",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+            }).then(res => res.ok ? res.json() : [])
+        ])
+            .then(([instrumentsData, favoritesData]) => {
+                const favIds = new Set<number>(favoritesData.map((f: any) => f.instrument));
+                setFavoriteIds(favIds);
+
+                const instrumentsWithFav = instrumentsData.map((item: InstrumentItem) => ({
+                    ...item,
+                    isFavorite: favIds.has(item.id)
+                }));
+                setInstruments(instrumentsWithFav);
+                setFiltered(instrumentsWithFav);
                 setLoading(false);
             })
             .catch((err) => {
@@ -109,6 +125,37 @@ function ExchangePage() {
         setFiltered(results);
     };
 
+    const handleToggleFavorite = async (instrumentId: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            const result = await toggleFavorite(instrumentId);
+
+            // Update favorite status in both lists
+            const updateFavoriteStatus = (items: InstrumentExtended[]) =>
+                items.map(item =>
+                    item.id === instrumentId
+                        ? { ...item, isFavorite: result.is_favorite }
+                        : item
+                );
+
+            setInstruments(updateFavoriteStatus);
+            setFiltered(updateFavoriteStatus);
+
+            // Update favoriteIds set
+            setFavoriteIds(prev => {
+                const newSet = new Set(prev);
+                if (result.is_favorite) {
+                    newSet.add(instrumentId);
+                } else {
+                    newSet.delete(instrumentId);
+                }
+                return newSet;
+            });
+        } catch (err) {
+            console.error("Failed to toggle favorite:", err);
+        }
+    };
+
     if (loading) return <div id="loading">Loading…</div>;
     if (error) return <div id="error">Error: {error}</div>;
 
@@ -136,6 +183,7 @@ function ExchangePage() {
                             <th>Last</th>
                             <th>Exchange</th>
                             <th>Currency</th>
+                            <th>Favorite</th>
                         </tr>
                     </thead>
 
@@ -152,6 +200,15 @@ function ExchangePage() {
                                 <td>{x.latestCandle?.close_price ?? "—"}</td>
                                 <td>{x.exchange}</td>
                                 <td>{x.currency}</td>
+                                <td>
+                                    <button
+                                        className={`fav-btn ${x.isFavorite ? "is-favorite" : ""}`}
+                                        onClick={(e) => handleToggleFavorite(x.id, e)}
+                                        title={x.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                                    >
+                                        {x.isFavorite ? "★" : "☆"}
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

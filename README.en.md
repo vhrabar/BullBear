@@ -67,37 +67,7 @@ This project is the result of teamwork within the course project assignment for 
 
 # Installation
 
-## Cloning the repository
-```bash
-git clone git@github.com:vhrabar/BullBear.git
-cd BullBear
-```
-
-## Editing environment variables
-After entering all required variables (Google OAuth, MS OAuth, finnhub.io, database, ...) in `.env.example`
-```bash
-cp .env.example .env
-```
-
-## Running the project
-
-```bash
-docker compose up --build
-```
-
-## Setting up the database
-
-```bash
-docker compose exec backend python manage.py migrate
-docker compose exec backend python manage.py createsuperuser
-```
-
-## (Optional) Running tests
-
-```bash
-docker compose exec backend pytest
-docker compose exec frontend npm test
-```
+See: [Installation Guide](https://github.com/vhrabar/BullBear/wiki/8.--Upute-za-pu%C5%A1tanje-u-pogon/_edit)
 
 # Team Members
 

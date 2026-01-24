@@ -16,3 +16,23 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+svg text,
+svg tspan {
+  fill: #e5e7eb !important;
+}
+
+svg line {
+  stroke: #475569 !important;
+}
+
+.MuiChartsLegend-root,
+.MuiChartsLegend-root span,
+.MuiChartsLegend-series,
+.MuiChartsLegend-series span,
+.MuiChartsLegend-label,
+[class*="MuiChartsLegend"] span,
+[class*="MuiChartsLegend"] p {
+  color: #e5e7eb !important;
+}
+

@@ -14,6 +14,7 @@ import ETFOverview from "../pages/ETFOverview.tsx";
 import ETFEdit from "../pages/ETFEdit.tsx";
 import ETFExplore from "../pages/ETFExplore.tsx";
 import FavoritesPage from "../pages/FavoritesPage.tsx";
+import Profile from "../pages/Profile.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 import FAQ from "../pages/FAQ";
@@ -143,6 +144,17 @@ const AppRouter: React.FC = () => {
                         <ProtectedRoute>
                             <Layout>
                                 <FavoritesPage />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Profile />
                             </Layout>
                         </ProtectedRoute>
                     }

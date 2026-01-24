@@ -172,12 +172,53 @@ def export_csv(request):
     df.to_csv(response, index=False)
     return response
 
-class UserProfileViewSet(viewsets.ReadOnlyModelViewSet):
+class UserProfileViewSet(viewsets.ModelViewSet):
+    """
+    GET /api/users/user-profile/ -> list current user's profile(s)
+    PATCH /api/users/user-profile/{pk}/ -> update profile (only own profile allowed)
+    PATCH /api/users/user-profile/me/ -> update current user's profile + optional user fields
+    """
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        # Use the update serializer for write operations
+        if self.action in ("update", "partial_update", "me"):
+            from .serializers import UserProfileUpdateSerializer
+
+            return UserProfileUpdateSerializer
+        return UserProfileSerializer
+
+    def perform_update(self, serializer):
+        # ensure user owns the profile
+        instance = serializer.instance
+        if instance.user != self.request.user:
+            raise PermissionDenied("You can only update your own profile.")
+        serializer.save()
+
+    @action(detail=False, methods=["GET", "PATCH"], url_path="me")
+    def me(self, request):
+        """
+        PATCH /api/users/user-profile/me/
+        Accepts fields: bio, avatar_url, username, first_name, last_name
+        Updates both UserProfile and User accordingly for the authenticated user.
+        """
+        user = request.user
+        if not hasattr(user, "profile"):
+            return Response({"detail": "Profile missing."}, status=400)
+
+        profile = user.profile
+        if request.method == "GET":
+            return Response(UserProfileSerializer(profile).data)
+
+        # PATCH
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(UserProfileSerializer(profile).data)
 
 
 class ContactViewSet(viewsets.ViewSet):

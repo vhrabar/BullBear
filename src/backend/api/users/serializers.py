@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
+from .models import User
 
 
 class UserPortofolioSerializer(serializers.ModelSerializer):
@@ -14,6 +15,52 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = '__all__'
 
+    username = serializers.CharField(source="user.username", read_only=True)
+    first_name = serializers.CharField(source="user.first_name", read_only=True)
+    last_name = serializers.CharField(source="user.last_name", read_only=True)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "email", "first_name", "last_name")
+        extra_kwargs = {"username": {"required": False}}
+
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    # allow updating a few user fields alongside profile
+    username = serializers.CharField(required=False, allow_blank=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ("id", "user", "bio", "avatar_url", "username", "first_name", "last_name")
+        read_only_fields = ("user",)
+
+    def update(self, instance, validated_data):
+        # pop user-related fields
+        username = validated_data.pop("username", None)
+        first_name = validated_data.pop("first_name", None)
+        last_name = validated_data.pop("last_name", None)
+
+        for attr, val in validated_data.items():
+            setattr(instance, attr, val)
+        instance.save()
+
+        user = instance.user
+        if username:
+            if User.objects.exclude(pk=user.pk).filter(username=username).exists():
+                raise serializers.ValidationError({"username": "This username is already taken."})
+            user.username = username
+        if first_name is not None:
+            user.first_name = first_name
+        if last_name is not None:
+            user.last_name = last_name
+
+        user.save()
+
+        return instance
 
 
 class ContactDefaultsSerializer(serializers.Serializer):

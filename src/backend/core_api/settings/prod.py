@@ -54,6 +54,7 @@ LOGGING = {
     },
 }
 
-BASE_URL = os.getenv("BASE_URL", "https://bull-bear-app.com")
+BASE_URL = os.getenv("BASE_URL", "https://bull-bear.app")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "https://bull-bear.app")
 
 print("Production settings loaded.")

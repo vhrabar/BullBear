@@ -1,6 +1,7 @@
 import requests
 from base64 import b64encode
 from django.conf import settings
+from urllib.parse import urlparse
 import logging
 
 BASE_URL = "https://api-m.sandbox.paypal.com"
@@ -44,11 +45,17 @@ def create_order(subscription_type):
         }]
     }
 
-    # Include application_context with return/cancel URLs so PayPal redirects back after payer approval
-    frontend_base = getattr(settings, "FRONTEND_BASE_URL", None) or getattr(settings, "BASE_URL", None)
+    frontend_base = getattr(settings, "FRONTEND_BASE_URL", None)
+    if not frontend_base:
+        candidate = getattr(settings, 'LOGIN_REDIRECT_URL', None) or getattr(settings, 'LOGOUT_REDIRECT_URL', None)
+        if candidate and candidate.startswith('http'):
+            parsed = urlparse(candidate)
+            frontend_base = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            frontend_base = getattr(settings, 'BASE_URL', None)
+
     if frontend_base:
         frontend_base = frontend_base.rstrip('/')
-        # Add subscription_type_id to the return/cancel URLs so the frontend can call the capture endpoint
         payload["application_context"] = {
             "return_url": f"{frontend_base}/payment/paypal/return?subscription_type_id={subscription_type.id}",
             "cancel_url": f"{frontend_base}/payment/paypal/cancel?subscription_type_id={subscription_type.id}",

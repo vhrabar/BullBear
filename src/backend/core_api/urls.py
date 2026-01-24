@@ -61,12 +61,13 @@ urlpatterns = [
 ]
 
 
+# Subscription redirect helpers (used for Stripe returns)
+
 def _frontend_subscription_base():
     frontend_base = getattr(settings, 'FRONTEND_BASE_URL', None)
     if frontend_base:
         return frontend_base.rstrip('/')
 
-    # Fallback to LOGIN_REDIRECT_URL or LOGOUT_REDIRECT_URL, but extract origin (scheme+netloc)
     candidate = getattr(settings, 'LOGIN_REDIRECT_URL', None) or getattr(settings, 'LOGOUT_REDIRECT_URL', None) or '/'
     if candidate.startswith('http'):
         parsed = urlparse(candidate)
@@ -86,27 +87,17 @@ def subscription_cancel_redirect(request):
     return redirect(target)
 
 
-def _frontend_forward(request):
-    frontend_base = _frontend_subscription_base()
-    # request.get_full_path() returns path + query (e.g. /payment/paypal/return?token=...)
-    return redirect(frontend_base.rstrip('/') + request.get_full_path())
-
-
 urlpatterns += [
-    # Keep existing subscription success/cancel endpoints
-    path('subscription/success', SubscriptionSuccessView.as_view()),
-    path('subscription/cancel', SubscriptionCancelView.as_view()),
+    # Expose only API-prefixed subscription endpoints (frontend handles /subscription/* routes)
     path('api/subscription/success', SubscriptionSuccessView.as_view()),
     path('api/subscription/cancel', SubscriptionCancelView.as_view()),
-
-    path('subscription/success/', SubscriptionSuccessView.as_view()),
-    path('subscription/cancel/', SubscriptionCancelView.as_view()),
     path('api/subscription/success/', SubscriptionSuccessView.as_view()),
     path('api/subscription/cancel/', SubscriptionCancelView.as_view()),
 
-    # Accept PayPal redirects on the backend host and forward them to the frontend app
-    path('payment/paypal/return', _frontend_forward),
-    path('payment/paypal/cancel', _frontend_forward),
-    path('payment/paypal/return/', _frontend_forward),
-    path('payment/paypal/cancel/', _frontend_forward),
+    # Also expose non-API endpoints mapped to backend views so payment gateways that post back to the
+    # backend host (e.g., Stripe in dev) are processed server-side and then redirected to the frontend.
+    path('subscription/success', SubscriptionSuccessView.as_view()),
+    path('subscription/cancel', SubscriptionCancelView.as_view()),
+    path('subscription/success/', SubscriptionSuccessView.as_view()),
+    path('subscription/cancel/', SubscriptionCancelView.as_view()),
 ]

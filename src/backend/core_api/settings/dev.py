@@ -22,3 +22,5 @@ LOGOUT_REDIRECT_URL = "http://localhost:5173"
 print("Development settings loaded.")
 
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
+

@@ -17,6 +17,22 @@ from .services.paypal_service import create_order, capture_order, PayPalAPIError
 logger = logging.getLogger(__name__)
 
 
+def _html_redirect_response(target_url):
+    html = f"""
+    <!doctype html>
+    <html>
+      <head>
+        <meta http-equiv="refresh" content="0;url={target_url}">
+        <script>try{{window.location.replace({repr(target_url)});}}catch(e){{window.location.href={repr(target_url)};}}</script>
+      </head>
+      <body>
+        Redirecting to <a href="{target_url}">{target_url}</a>
+      </body>
+    </html>
+    """
+    return HttpResponse(html)
+
+
 class StripeCheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -25,8 +41,9 @@ class StripeCheckoutView(APIView):
             SubscriptionType, id=request.data["subscription_type_id"]
         )
 
+        # Use backend BASE_URL and API-prefixed endpoints so Stripe redirects to the server
+        # The server-side SubscriptionSuccessView will finalize the payment and create the subscription
         base = settings.BASE_URL.rstrip('/')
-        # Ensure redirect goes to the payment app endpoints so SubscriptionSuccessView handles creation
         success_url = f"{base}/api/payment/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{base}/api/payment/subscription/cancel?session_id={{CHECKOUT_SESSION_ID}}"
 
@@ -201,41 +218,48 @@ class SubscriptionSuccessView(APIView):
 
         if session_id:
             try:
-                print(f"[stripe success] retrieving session {session_id}")
+                logger.info(f"[stripe success] retrieving session {session_id}")
                 session = stripe.checkout.Session.retrieve(session_id, expand=["payment_intent"])
-                print(f"[stripe success] retrieved session id={getattr(session, 'id', None)}")
+                logger.info(f"[stripe success] retrieved session id={getattr(session, 'id', None)} raw={session}")
             except Exception as exc:
-                print(f"[stripe success] failed to retrieve session {session_id}: {exc}")
+                logger.exception(f"[stripe success] failed to retrieve session {session_id}: {exc}")
                 frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
-                return redirect(frontend_base.rstrip("/") + "/subscription/success")
+                target = frontend_base.rstrip("/") + "/subscription/success"
+                return _html_redirect_response(target)
 
             paid = False
             try:
-                if getattr(session, "payment_status", None) == "paid":
+                ps = getattr(session, "payment_status", None)
+                logger.info(f"[stripe success] session.payment_status={ps}")
+                if ps == "paid":
                     paid = True
 
                 pi = getattr(session, "payment_intent", None)
+                logger.info(f"[stripe success] payment_intent={pi}")
                 if getattr(pi, "status", None) == "succeeded":
                     paid = True
 
                 charges = getattr(getattr(pi, "charges", None), "data", None)
+                logger.info(f"[stripe success] charges={charges}")
                 if charges and len(charges) > 0:
                     first = charges[0]
-                    print(f"[stripe success] charge first={first}")
+                    logger.info(f"[stripe success] charge first={first}")
                     if first.get('status') == 'succeeded' or first.get('paid') is True:
                         paid = True
             except Exception as exc:
-                print(f"[stripe success] error evaluating payment status: {exc}")
+                logger.exception(f"[stripe success] error evaluating payment status: {exc}")
 
             meta = getattr(session, "metadata", {}) or {}
             user_id = meta.get("user_id")
             subscription_type_id = meta.get("subscription_type_id")
 
-            print(f"[stripe success] paid={paid} metadata={meta}")
+            logger.info(f"[stripe success] paid={paid} metadata={meta}")
 
             if paid and user_id and subscription_type_id:
-                if not Payment.objects.filter(provider_payment_id=session.id, provider="stripe").exists():
-                    try:
+                # Double-check types and log before DB ops
+                try:
+                    logger.info(f"[stripe success] creating subscription for user_id={user_id} subscription_type_id={subscription_type_id}")
+                    if not Payment.objects.filter(provider_payment_id=session.id, provider="stripe").exists():
                         subscription_type = SubscriptionType.objects.get(id=subscription_type_id)
 
                         package, _ = UserSubscriptionPackage.objects.get_or_create(
@@ -243,8 +267,6 @@ class SubscriptionSuccessView(APIView):
                             price=subscription_type.price,
                             defaults={"is_active": True},
                         )
-
-                        print(f"[stripe success] creating DB entries user_id={user_id} subscription_type={subscription_type_id}")
 
                         Payment.objects.create(
                             user_id=user_id,
@@ -265,15 +287,16 @@ class SubscriptionSuccessView(APIView):
                             end_date=now() + timedelta(days=subscription_type.duration_days),
                             is_active=True,
                         )
-                    except SubscriptionType.DoesNotExist:
-                        print(f"[stripe success] SubscriptionType {subscription_type_id} not found")
-                else:
-                    print(f"[stripe success] payment with id={session.id} already exists, skipping creation")
+                    else:
+                        logger.info(f"[stripe success] payment with id={session.id} already exists, skipping creation")
+                except Exception as exc:
+                    logger.exception(f"[stripe success] failed creating subscription: {exc}")
             else:
-                print("[stripe success] session not paid or missing metadata; skipping subscription creation")
+                logger.info("[stripe success] session not paid or missing metadata; skipping subscription creation")
 
         frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
-        return redirect(frontend_base.rstrip("/") + "/subscription/success")
+        target = frontend_base.rstrip("/") + "/subscription/success"
+        return _html_redirect_response(target)
 
 
 class SubscriptionCancelView(APIView):
@@ -281,4 +304,5 @@ class SubscriptionCancelView(APIView):
 
     def get(self, request):
         frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
-        return redirect(frontend_base.rstrip("/") + "/subscription/cancel")
+        target = frontend_base.rstrip("/") + "/subscription/cancel"
+        return _html_redirect_response(target)

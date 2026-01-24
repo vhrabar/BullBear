@@ -88,13 +88,26 @@ const ProfilePage: React.FC = () => {
         setPurchaseMessage(null);
         try {
             const create = await createPayPalOrder(subscription_type_id);
-            const orderId = create.order_id || create.id || null;
+            // PayPal create order returns the full order object which includes HATEOAS links.
+            // The payer must approve the order at the 'approve' link before capture is allowed.
+            const order = create;
+            const links = order?.links || [];
+            const approve = links.find((l: any) => l.rel === 'approve' || l.rel === 'payer-action');
+            if (approve && approve.href) {
+                // Redirect the browser to PayPal approval page. After approval PayPal will redirect
+                // back to your configured return URL — that page should call the capture endpoint.
+                window.location.href = approve.href;
+                return;
+            }
+
+            // Fallback: if there is no approve link, try to derive order id and attempt capture (best-effort)
+            const orderId = order?.id || create.order_id || null;
             if (!orderId) {
-                setPurchaseMessage("Unable to create PayPal order.");
+                setPurchaseMessage('Unable to create PayPal order.');
             } else {
-                // attempt to capture immediately (server-side will finalize)
+                // Attempt capture as a fallback; typical flows require approval so this may still fail.
                 await capturePayPalOrder(orderId, subscription_type_id);
-                setPurchaseMessage("PayPal payment captured. Subscription should be active.");
+                setPurchaseMessage('PayPal payment captured. Subscription should be active.');
                 // refresh profile
                 const updated = await fetchMyProfile();
                 setProfile(updated);

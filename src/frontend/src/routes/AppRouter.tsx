@@ -28,6 +28,9 @@ import Contact from "../pages/Contact";
 import CSVTade from "../pages/CSVTade";
 import PageNotFound from "../pages/PageNotFound";
 
+const PayPalReturn = React.lazy(() => import('../pages/PayPalReturn'));
+const PayPalCancel = React.lazy(() => import('../pages/PayPalCancel'));
+
 const AppRouter: React.FC = () => {
     return (
         <Router>
@@ -176,6 +179,8 @@ const AppRouter: React.FC = () => {
 
                 <Route path="/subscription/success" element={<SubscriptionSuccess/>} />
                 <Route path="/subscription/cancel" element={<SubscriptionCancel/>} />
+                <Route path="/payment/paypal/return" element={<React.Suspense fallback={<div>Loading...</div>}><PayPalReturn /></React.Suspense>} />
+                <Route path="/payment/paypal/cancel" element={<React.Suspense fallback={<div>Loading...</div>}><PayPalCancel /></React.Suspense>} />
 
                 <Route path="*" element={<PageNotFound />} />
             </Routes>

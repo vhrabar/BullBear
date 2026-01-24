@@ -68,6 +68,19 @@ export async function capturePayPalOrder(order_id: string, subscription_type_id:
         },
         body: JSON.stringify({ order_id, subscription_type_id }),
     });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    if (!r.ok) {
+        // Try to parse JSON body returned by backend (which will include PayPal details when available)
+        let payload = null;
+        try {
+            payload = await r.json();
+        } catch (err) {
+            // ignore JSON parse errors
+        }
+        if (payload) {
+            throw new Error(JSON.stringify(payload));
+        }
+        const text = await r.text();
+        throw new Error(text || `HTTP ${r.status}`);
+    }
     return r.json();
 }

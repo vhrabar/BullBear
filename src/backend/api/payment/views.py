@@ -8,10 +8,11 @@ import stripe
 from django.conf import settings
 from django.http import HttpResponse
 import logging
+import requests
 
 from .models import SubscriptionType, UserSubscription, Payment, UserSubscriptionPackage
 from .services.stripe_service import create_checkout_session
-from .services.paypal_service import create_order, capture_order
+from .services.paypal_service import create_order, capture_order, PayPalAPIError
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +110,17 @@ class PayPalCreateOrderView(APIView):
         subscription_type = get_object_or_404(
             SubscriptionType, id=request.data["subscription_type_id"]
         )
-        order = create_order(subscription_type)
-        return Response({"order_id": order["id"]})
+        try:
+            order = create_order(subscription_type)
+        except PayPalAPIError as e:
+            logger.exception("PayPal create order failed")
+            return Response({"detail": "PayPal create order failed", "paypal": e.data or e.text}, status=getattr(e, "status_code", 502))
+        except requests.RequestException as e:
+            logger.exception("Network error while creating PayPal order")
+            return Response({"detail": "Network error while creating PayPal order"}, status=502)
+
+        # Return full order JSON so frontend can read `links` and redirect the user to PayPal approval
+        return Response(order)
 
 
 class PayPalCaptureOrderView(APIView):
@@ -121,7 +131,14 @@ class PayPalCaptureOrderView(APIView):
         subscription_type = get_object_or_404(
             SubscriptionType, id=request.data["subscription_type_id"]
         )
-        capture_order(order_id)
+        try:
+            capture_order(order_id)
+        except PayPalAPIError as e:
+            logger.exception("PayPal capture failed for order %s", order_id)
+            return Response({"detail": "PayPal capture failed", "paypal": e.data or e.text}, status=getattr(e, "status_code", 502))
+        except requests.RequestException:
+            logger.exception("Network error while capturing PayPal order %s", order_id)
+            return Response({"detail": "Network error while capturing PayPal order"}, status=502)
 
         package, _ = UserSubscriptionPackage.objects.get_or_create(
             subscription_type=subscription_type,

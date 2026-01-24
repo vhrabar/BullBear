@@ -86,8 +86,14 @@ def subscription_cancel_redirect(request):
     return redirect(target)
 
 
-#
+def _frontend_forward(request):
+    frontend_base = _frontend_subscription_base()
+    # request.get_full_path() returns path + query (e.g. /payment/paypal/return?token=...)
+    return redirect(frontend_base.rstrip('/') + request.get_full_path())
+
+
 urlpatterns += [
+    # Keep existing subscription success/cancel endpoints
     path('subscription/success', SubscriptionSuccessView.as_view()),
     path('subscription/cancel', SubscriptionCancelView.as_view()),
     path('api/subscription/success', SubscriptionSuccessView.as_view()),
@@ -97,4 +103,10 @@ urlpatterns += [
     path('subscription/cancel/', SubscriptionCancelView.as_view()),
     path('api/subscription/success/', SubscriptionSuccessView.as_view()),
     path('api/subscription/cancel/', SubscriptionCancelView.as_view()),
+
+    # Accept PayPal redirects on the backend host and forward them to the frontend app
+    path('payment/paypal/return', _frontend_forward),
+    path('payment/paypal/cancel', _frontend_forward),
+    path('payment/paypal/return/', _frontend_forward),
+    path('payment/paypal/cancel/', _frontend_forward),
 ]

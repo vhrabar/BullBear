@@ -1,11 +1,9 @@
 from datetime import timedelta
 from django.utils.timezone import now
-from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 import stripe
 from django.conf import settings
 from django.http import HttpResponse
@@ -23,8 +21,9 @@ class StripeCheckoutView(APIView):
             SubscriptionType, id=request.data["subscription_type_id"]
         )
 
-        success_url = f"{settings.BASE_URL}/subscription/success"
-        cancel_url = f"{settings.BASE_URL}/subscription/cancel"
+        base = settings.BASE_URL.rstrip('/')
+        success_url = f"{base}/api/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{base}/api/subscription/cancel?session_id={{CHECKOUT_SESSION_ID}}"
 
         session = create_checkout_session(
             user=request.user,
@@ -36,43 +35,58 @@ class StripeCheckoutView(APIView):
         return Response({"checkout_url": session.url})
 
 
-
-# Stripe Webhook
 class StripeWebhookView(APIView):
     permission_classes = []
 
     def post(self, request):
         event = stripe.Webhook.construct_event(
-            request.body, request.META.get("HTTP_STRIPE_SIGNATURE"), settings.STRIPE_WEBHOOK_SECRET
+            request.body,
+            request.META.get("HTTP_STRIPE_SIGNATURE"),
+            settings.STRIPE_WEBHOOK_SECRET,
         )
 
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
-            subscription_type = SubscriptionType.objects.get(
-                id=session["metadata"]["subscription_type_id"]
-            )
+            meta = session.get("metadata", {}) or {}
+            subscription_type_id = meta.get("subscription_type_id")
+            user_id = meta.get("user_id")
 
-            Payment.objects.create(
-                user_id=session["metadata"]["user_id"],
-                provider="stripe",
-                provider_payment_id=session["id"],
-                subscription_type=subscription_type,
-                amount=subscription_type.price,
-                status="paid",
-            )
+            if subscription_type_id and user_id:
+                try:
+                    subscription_type = SubscriptionType.objects.get(id=subscription_type_id)
+                except SubscriptionType.DoesNotExist:
+                    return HttpResponse(status=400)
 
-            UserSubscription.objects.create(
-                user_id=session["metadata"]["user_id"],
-                subscription_type=subscription_type,
-                start_date=now(),
-                end_date=now() + timedelta(days=subscription_type.duration_days),
-                is_active=True,
-            )
+                package, _ = UserSubscriptionPackage.objects.get_or_create(
+                    subscription_type=subscription_type,
+                    price=subscription_type.price,
+                    defaults={"is_active": True},
+                )
+
+                if not Payment.objects.filter(provider_payment_id=session.get("id"), provider="stripe").exists():
+                    Payment.objects.create(
+                        user_id=user_id,
+                        provider="stripe",
+                        provider_payment_id=session.get("id"),
+                        subscription_type=subscription_type,
+                        package=package,
+                        amount=subscription_type.price,
+                        status="paid",
+                    )
+
+                    UserSubscription.objects.filter(user_id=user_id, is_active=True).update(is_active=False)
+
+                    UserSubscription.objects.create(
+                        user_id=user_id,
+                        package=package,
+                        start_date=now(),
+                        end_date=now() + timedelta(days=subscription_type.duration_days),
+                        is_active=True,
+                    )
 
         return HttpResponse(status=200)
 
 
-# PayPal Create Order
 class PayPalCreateOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -84,7 +98,6 @@ class PayPalCreateOrderView(APIView):
         return Response({"order_id": order["id"]})
 
 
-# PayPal Capture Order
 class PayPalCaptureOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -101,22 +114,115 @@ class PayPalCaptureOrderView(APIView):
             defaults={"is_active": True},
         )
 
-        Payment.objects.create(
-            user=request.user,
-            provider="paypal",
-            provider_payment_id=order_id,
-            subscription_type=subscription_type,
-            amount=subscription_type.price,
-            status="paid",
-            package=package,
-        )
+        if not Payment.objects.filter(provider_payment_id=order_id, provider="paypal").exists():
+            Payment.objects.create(
+                user=request.user,
+                provider="paypal",
+                provider_payment_id=order_id,
+                subscription_type=subscription_type,
+                package=package,
+                amount=subscription_type.price,
+                status="paid",
+            )
 
-        UserSubscription.objects.create(
-            user=request.user,
-            package=package,
-            start_date=now(),
-            end_date=now() + timedelta(days=subscription_type.duration_days),
-            is_active=True,
-        )
+            UserSubscription.objects.filter(user=request.user, is_active=True).update(is_active=False)
+
+            UserSubscription.objects.create(
+                user=request.user,
+                package=package,
+                start_date=now(),
+                end_date=now() + timedelta(days=subscription_type.duration_days),
+                is_active=True,
+            )
 
         return Response({"status": "success"})
+
+
+class SubscriptionListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        packages = UserSubscriptionPackage.objects.filter(is_active=True).select_related("subscription_type")
+
+        data = []
+        for pkg in packages:
+            data.append({
+                "package_id": pkg.id,
+                "price": str(pkg.price),
+                "subscription_type": {
+                    "id": pkg.subscription_type.id,
+                    "name": pkg.subscription_type.name,
+                    "description": pkg.subscription_type.description,
+                    "price": str(pkg.subscription_type.price),
+                    "duration_days": pkg.subscription_type.duration_days,
+                }
+            })
+
+        return Response(data)
+
+
+class SubscriptionSuccessView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        session_id = request.GET.get("session_id") or request.GET.get("session")
+
+        if session_id:
+            try:
+                session = stripe.checkout.Session.retrieve(session_id, expand=["payment_intent"])
+            except Exception:
+                frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
+                return redirect(frontend_base.rstrip("/") + "/subscription/success")
+
+            paid = (
+                getattr(session, "payment_status", None) == "paid"
+                or getattr(getattr(session, "payment_intent", None), "status", None) == "succeeded"
+            )
+
+            meta = getattr(session, "metadata", {}) or {}
+            user_id = meta.get("user_id")
+            subscription_type_id = meta.get("subscription_type_id")
+
+            if paid and user_id and subscription_type_id:
+                if not Payment.objects.filter(provider_payment_id=session.id, provider="stripe").exists():
+                    try:
+                        subscription_type = SubscriptionType.objects.get(id=subscription_type_id)
+
+                        package, _ = UserSubscriptionPackage.objects.get_or_create(
+                            subscription_type=subscription_type,
+                            price=subscription_type.price,
+                            defaults={"is_active": True},
+                        )
+
+                        Payment.objects.create(
+                            user_id=user_id,
+                            provider="stripe",
+                            provider_payment_id=session.id,
+                            subscription_type=subscription_type,
+                            package=package,
+                            amount=subscription_type.price,
+                            status="paid",
+                        )
+
+                        UserSubscription.objects.filter(user_id=user_id, is_active=True).update(is_active=False)
+
+                        UserSubscription.objects.create(
+                            user_id=user_id,
+                            package=package,
+                            start_date=now(),
+                            end_date=now() + timedelta(days=subscription_type.duration_days),
+                            is_active=True,
+                        )
+                    except SubscriptionType.DoesNotExist:
+                        pass
+
+        frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
+        return redirect(frontend_base.rstrip("/") + "/subscription/success")
+
+
+class SubscriptionCancelView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
+        return redirect(frontend_base.rstrip("/") + "/subscription/cancel")

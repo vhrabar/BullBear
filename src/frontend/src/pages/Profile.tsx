@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { fetchMyProfile, updateMyProfile, UserProfile } from "../api/user";
 import "../styles/Profile.css";
+import { fetchPackages, startStripeCheckout, createPayPalOrder, capturePayPalOrder, SubscriptionPackage } from "../api/payment";
 
 const ProfilePage: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+
+    const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
+    const [packagesLoading, setPackagesLoading] = useState(false);
+    const [packagesError, setPackagesError] = useState<string | null>(null);
+    const [purchaseLoading, setPurchaseLoading] = useState(false);
+    const [purchaseMessage, setPurchaseMessage] = useState<string | null>(null);
 
     useEffect(() => {
         let mounted = true;
@@ -18,6 +25,18 @@ const ProfilePage: React.FC = () => {
             })
             .catch((e) => setError(e.message || String(e)))
             .finally(() => mounted && setLoading(false));
+
+        // fetch packages
+        setPackagesLoading(true);
+        fetchPackages()
+            .then((pkgs) => {
+                if (mounted) setPackages(pkgs);
+            })
+            .catch((e: any) => {
+                if (mounted) setPackagesError(e?.message || String(e));
+            })
+            .finally(() => mounted && setPackagesLoading(false));
+
         return () => {
             mounted = false;
         };
@@ -47,12 +66,74 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    async function buyWithStripe(subscription_type_id: number) {
+        setPurchaseLoading(true);
+        setPurchaseMessage(null);
+        try {
+            const res = await startStripeCheckout(subscription_type_id);
+            if (res.checkout_url) {
+                window.location.href = res.checkout_url; // redirect to Stripe hosted checkout
+            } else {
+                setPurchaseMessage("Unable to start Stripe checkout.");
+            }
+        } catch (e: any) {
+            setPurchaseMessage(e.message || String(e));
+        } finally {
+            setPurchaseLoading(false);
+        }
+    }
+
+    async function buyWithPayPal(subscription_type_id: number) {
+        setPurchaseLoading(true);
+        setPurchaseMessage(null);
+        try {
+            const create = await createPayPalOrder(subscription_type_id);
+            const orderId = create.order_id || create.id || null;
+            if (!orderId) {
+                setPurchaseMessage("Unable to create PayPal order.");
+            } else {
+                // attempt to capture immediately (server-side will finalize)
+                await capturePayPalOrder(orderId, subscription_type_id);
+                setPurchaseMessage("PayPal payment captured. Subscription should be active.");
+                // refresh profile
+                const updated = await fetchMyProfile();
+                setProfile(updated);
+            }
+        } catch (e: any) {
+            setPurchaseMessage(e.message || String(e));
+        } finally {
+            setPurchaseLoading(false);
+        }
+    }
+
     if (loading) return <div className="profile-page">Loading...</div>;
     if (error) return <div className="profile-page error">Error: {error}</div>;
 
     return (
         <div className="profile-page">
             <h2>Your Profile</h2>
+
+            {profile && profile.subscription ? (
+                <div className="panel">
+                    <h3>Subscription</h3>
+                    <p>Plan: {profile.subscription.subscription_type.name}</p>
+                    <p>Price: €{profile.subscription.package_price}</p>
+                    <p>Ends: {new Date(profile.subscription.end_date).toLocaleString()}</p>
+                    <p>Active: {profile.subscription.is_active ? "Yes" : "No"}</p>
+
+                    <div style={{ marginTop: 8 }}>
+                        <button onClick={() => buyWithStripe(profile.subscription!.subscription_type.id)} disabled={purchaseLoading} className="btn">Extend / Renew with Card</button>
+                        <button onClick={() => buyWithPayPal(profile.subscription!.subscription_type.id)} disabled={purchaseLoading} className="btn" style={{ marginLeft: 8 }}>Extend / Renew with PayPal</button>
+                    </div>
+                </div>
+            ) : (
+                <div className="panel">
+                    <h3>No active subscription</h3>
+                </div>
+            )}
+
+            <h3>Edit profile</h3>
+
             {profile ? (
                 <form
                     onSubmit={(e) => {
@@ -93,6 +174,30 @@ const ProfilePage: React.FC = () => {
             ) : (
                 <div>No profile found.</div>
             )}
+
+            <div style={{ marginTop: 20 }}>
+                <h3>Get a subscription</h3>
+                {packagesLoading ? (
+                    <div>Loading packages...</div>
+                ) : packagesError ? (
+                    <div className="error">Error loading packages: {packagesError}</div>
+                ) : (
+                    <div>
+                        {packages.map((pkg) => (
+                            <div key={pkg.package_id} style={{ border: '1px solid #334155', padding: 12, borderRadius: 8, marginBottom: 8 }}>
+                                <div style={{ fontWeight: 800 }}>{pkg.subscription_type.name} — €{pkg.price}</div>
+                                <div style={{ color: '#9ca3af' }}>{pkg.subscription_type.description}</div>
+                                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                                    <button onClick={() => buyWithStripe(pkg.subscription_type.id)} disabled={purchaseLoading} className="btn buy">Buy with Card (Stripe)</button>
+                                    <button onClick={() => buyWithPayPal(pkg.subscription_type.id)} disabled={purchaseLoading} className="btn">Pay with PayPal</button>
+                                </div>
+                            </div>
+                        ))}
+                        {packages.length === 0 && <div>No packages available.</div>}
+                    </div>
+                )}
+                {purchaseMessage && <div style={{ marginTop: 8 }}>{purchaseMessage}</div>}
+            </div>
         </div>
     );
 };

@@ -1,24 +1,79 @@
 from rest_framework import serializers
+from django.utils import timezone
 
 from .models import UserPortfolio, UserProfile, ContactMessage, PortfolioSnapshot
 from .models import User
+from ..payment.models import SubscriptionType, UserSubscription
 
 
 class UserPortofolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPortfolio
         fields = '__all__'
+class SubscriptionTypeMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionType
+        fields = ["id", "name", "price", "duration_days"]
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    package_id = serializers.IntegerField(source="package.id")
+    package_price = serializers.DecimalField(source="package.price", max_digits=10, decimal_places=2)
+    subscription_type = SubscriptionTypeMiniSerializer(source="package.subscription_type")
+
+    class Meta:
+        model = UserSubscription
+        fields = [
+            "package_id",
+            "package_price",
+            "subscription_type",
+            "start_date",
+            "end_date",
+            "is_active",
+        ]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.IntegerField(source="user.id")
+    username = serializers.CharField(source="user.username")
+    first_name = serializers.CharField(source="user.first_name", allow_blank=True)
+    last_name = serializers.CharField(source="user.last_name", allow_blank=True)
+    bio = serializers.CharField(allow_blank=True)
+    avatar_url = serializers.CharField(allow_blank=True)
+    subscription = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
-        fields = '__all__'
+        fields = [
+            "user",
+            "username",
+            "first_name",
+            "last_name",
+            "bio",
+            "avatar_url",
+            "subscription",
+        ]
 
-    username = serializers.CharField(source="user.username", read_only=True)
-    first_name = serializers.CharField(source="user.first_name", read_only=True)
-    last_name = serializers.CharField(source="user.last_name", read_only=True)
+    def get_subscription(self, obj):
+        now = timezone.now()
 
+        sub = (
+            UserSubscription.objects
+            .filter(
+                user=obj.user,
+                is_active=True,
+                end_date__gte=now,
+                package__is_active=True,
+            )
+            .select_related("package__subscription_type")
+            .order_by("-end_date")
+            .first()
+        )
+
+        if not sub:
+            return None
+
+        return UserSubscriptionSerializer(sub).data
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,9 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserPortfolioViewSet, UserProfileViewSet, ContactViewSet, PortfolioSnapshotViewSet, export_csv, import_csv
+from .views import UserPortfolioViewSet, UserProfileViewSet, ContactViewSet, PortfolioSnapshotViewSet, export_csv, \
+    import_csv, UserViewSet, MyUserProfileView
 
 router = DefaultRouter()
-router.register(r'user-portfolio', UserPortfolioViewSet, basename='portfolio-details')
+router.register(r'portofolio-details', UserPortfolioViewSet, basename='portfolio-details')
 router.register(r'user-profile', UserProfileViewSet, basename='user-profile')
 router.register(r'user-user', UserViewSet, basename='user')
 router.register(r"contact", ContactViewSet, basename="contact")
@@ -16,5 +17,7 @@ urlpatterns = [
     path('registration/', include('dj_rest_auth.registration.urls')),
     path('', include('allauth.socialaccount.urls')),
     path('export/', export_csv, name="export"),
-    path('import/', import_csv, name="import")
+    path('import/', import_csv, name="import"),
+    path("user-profile/me/", MyUserProfileView.as_view(), name="my-user-profile"),
+
 ]

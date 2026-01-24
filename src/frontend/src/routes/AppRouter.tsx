@@ -15,6 +15,9 @@ import ETFEdit from "../pages/ETFEdit.tsx";
 import ETFExplore from "../pages/ETFExplore.tsx";
 import FavoritesPage from "../pages/FavoritesPage.tsx";
 import Profile from "../pages/Profile.tsx";
+import Subscription from "../pages/Subscription.tsx";
+import SubscriptionSuccess from "../pages/SubscriptionSuccess.tsx";
+import SubscriptionCancel from "../pages/SubscriptionCancel.tsx";
 
 import ProtectedRoute from "../auth/AuthProtection.tsx";
 import FAQ from "../pages/FAQ";
@@ -160,7 +163,19 @@ const AppRouter: React.FC = () => {
                     }
                 />
 
+                <Route
+                    path="/subscription"
+                    element={
+                        <ProtectedRoute>
+                            <Layout>
+                                <Subscription />
+                            </Layout>
+                        </ProtectedRoute>
+                    }
+                />
 
+                <Route path="/subscription/success" element={<SubscriptionSuccess/>} />
+                <Route path="/subscription/cancel" element={<SubscriptionCancel/>} />
 
                 <Route path="*" element={<PageNotFound />} />
             </Routes>

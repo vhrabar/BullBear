@@ -1,18 +1,10 @@
-from django.contrib.auth import get_user_model
-from rest_framework import viewsets, permissions, mixins, status
-from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied, NotFound
-
-from .models import UserPortfolio, UserProfile
-from .serializers import UserPortofolioSerializer, UserProfileSerializer, UserSerializer
-from rest_framework import permissions
-User = get_user_model()
 from datetime import timedelta
 from decimal import Decimal
 from math import sqrt
 
 import pandas as pd
 
+from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.db.models.functions import TruncDay, TruncHour, TruncMinute
 from django.http import HttpResponse, JsonResponse
@@ -21,24 +13,28 @@ from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from rest_framework import permissions, request, status, viewsets
+from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from ..orders.models import Order
 from ..orders.permissions import IsServiceExecutor
-from ..trading.models import Instrument, InstrumentIntervalData, PortfolioHolding
+from ..trading.models import Instrument, InstrumentIntervalData
 from .functions import _max_drawdown, _pct, _safe_float, _std, _var_cvar
-from .models import ContactMessage, PortfolioSnapshot, UserPortfolio, UserProfile, User
+from .models import ContactMessage, PortfolioSnapshot, UserPortfolio, UserProfile
 from .serializers import (
     ContactDefaultsSerializer,
     ContactMessageSerializer,
     PortfolioSnapshotSerializer,
     UserPortofolioSerializer,
     UserProfileSerializer,
+    UserSerializer,
 )
 
+User = get_user_model()
 
 
 class UserPortfolioViewSet(
@@ -46,7 +42,7 @@ class UserPortfolioViewSet(
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     serializer_class = UserPortofolioSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -62,7 +58,7 @@ class UserPortfolioViewSet(
         DELETE does not remove the portfolio.
         It resets it to the default state.
         """
-        portfolio = self.get_object()
+        portfolio: UserPortfolio = self.get_object()
 
         if portfolio.user != request.user.profile:
             raise PermissionDenied("You do not own this portfolio.")
@@ -71,18 +67,25 @@ class UserPortfolioViewSet(
         portfolio.balance = 10000
         portfolio.is_active = True
         portfolio.save(update_fields=["balance", "is_active"])
+
+        # Remove all holdings
+        portfolio.holdings.all().delete()
+
+        serializer = self.get_serializer(portfolio)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @csrf_exempt
 @require_POST
 def import_csv(request):
     """
     Import orders from a CSV file for the current authenticated user.
     Required CSV columns: portfolio_name, instrument_symbol, side, order_type, quantity
-    Optional columns: time_in_force, limit_price, stop_price
+    Optional columns: time_in_force, limit_price, stop_price, instrument_name
     """
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Authentication required"}, status=401)
 
-    # Get the current user's profile
     try:
         profile = request.user.profile
     except UserProfile.DoesNotExist:
@@ -90,47 +93,63 @@ def import_csv(request):
 
     file = request.FILES.get("file")
     if not file:
-        return JsonResponse({"error": "No file uploaded"}, status = 400)
+        return JsonResponse({"error": "No file uploaded"}, status=400)
+
     try:
         df = pd.read_csv(file)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
-    records = df.to_dict(orient = "records")
+
+    records = df.to_dict(orient="records")
+
     required_fields = {"portfolio_name", "instrument_symbol", "side", "order_type", "quantity"}
     for i, row in enumerate(records):
         for field in required_fields:
             if field not in row or pd.isna(row[field]) or row[field] == "":
                 return JsonResponse(
-                    {"error": f"Missing value for '{field}' in row {i+1}"},
-                    status = 400
-                    )
+                    {"error": f"Missing value for '{field}' in row {i + 1}"},
+                    status=400,
+                )
 
     created_orders = []
+
     for row in records:
         portfolio, _ = UserPortfolio.objects.get_or_create(
-            user = profile,
-            name = row["portfolio_name"],
-            defaults = {"balance": 10000}
+            user=profile,
+            name=row["portfolio_name"],
+            defaults={"balance": 10000},
         )
+
         instrument, _ = Instrument.objects.get_or_create(
-            symbol = row["instrument_symbol"],
-            defaults = {"name": row.get("instrument_name") or row["instrument_symbol"], "type": "STOCK"}
+            symbol=row["instrument_symbol"],
+            defaults={
+                "name": row.get("instrument_name") or row["instrument_symbol"],
+                "type": "STOCK",
+            },
         )
 
-        # Map side and order_type to model choices
-        side = row["side"].upper()
+        side = str(row["side"]).upper()
         if side not in [Order.Side.BUY, Order.Side.SELL]:
-            return JsonResponse({"error": f"Invalid side '{side}' in row. Use BUY or SELL."}, status=400)
+            return JsonResponse(
+                {"error": f"Invalid side '{side}' in row. Use BUY or SELL."},
+                status=400,
+            )
 
-        order_type = row["order_type"].upper()
+        order_type = str(row["order_type"]).upper()
         valid_order_types = [ot[0] for ot in Order.OrderType.choices]
         if order_type not in valid_order_types:
-            return JsonResponse({"error": f"Invalid order_type '{order_type}'. Use MARKET, LIMIT, STOP, or STOP_LIMIT."}, status=400)
+            return JsonResponse(
+                {
+                    "error": f"Invalid order_type '{order_type}'. "
+                             f"Use MARKET, LIMIT, STOP, or STOP_LIMIT."
+                },
+                status=400,
+            )
 
         time_in_force = row.get("time_in_force", "GTC")
         if pd.isna(time_in_force) or time_in_force == "":
             time_in_force = "GTC"
-        time_in_force = time_in_force.upper()
+        time_in_force = str(time_in_force).upper()
 
         limit_price = row.get("limit_price")
         if pd.isna(limit_price) or limit_price == "":
@@ -144,7 +163,6 @@ def import_csv(request):
         else:
             stop_price = Decimal(str(stop_price))
 
-        # Create the order for the current user
         order = Order.objects.create(
             user=profile,
             portfolio=portfolio,
@@ -159,7 +177,11 @@ def import_csv(request):
         )
         created_orders.append(order.id)
 
-    return JsonResponse({"message": f"Successfully imported {len(created_orders)} orders", "order_ids": created_orders})
+    return JsonResponse(
+        {"message": f"Successfully imported {len(created_orders)} orders", "order_ids": created_orders},
+        status=200,
+    )
+
 
 def export_csv(request):
     """
@@ -168,34 +190,36 @@ def export_csv(request):
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Authentication required"}, status=401)
 
-    # Get the current user's profile
     try:
         profile = request.user.profile
     except UserProfile.DoesNotExist:
         return JsonResponse({"error": "User profile not found"}, status=404)
 
-    # Export only the current user's orders
-    orders = Order.objects.select_related(
-        "portfolio", "instrument"
-    ).filter(user=profile)
+    orders = (
+        Order.objects.select_related("portfolio", "instrument")
+        .filter(user=profile)
+        .order_by("-placed_at")
+    )
 
     data = []
     for o in orders:
-        data.append({
-            "portfolio_name": o.portfolio.name,
-            "instrument_symbol": o.instrument.symbol,
-            "instrument_name": o.instrument.name,
-            "side": o.side,
-            "order_type": o.order_type,
-            "time_in_force": o.time_in_force,
-            "quantity": float(o.quantity),
-            "limit_price": float(o.limit_price) if o.limit_price else "",
-            "stop_price": float(o.stop_price) if o.stop_price else "",
-            "status": o.status,
-            "filled_quantity": float(o.filled_quantity),
-            "avg_fill_price": float(o.avg_fill_price) if o.avg_fill_price else "",
-            "placed_at": o.placed_at.strftime("%Y-%m-%d %H:%M:%S") if o.placed_at else "",
-        })
+        data.append(
+            {
+                "portfolio_name": o.portfolio.name,
+                "instrument_symbol": o.instrument.symbol,
+                "instrument_name": o.instrument.name,
+                "side": o.side,
+                "order_type": o.order_type,
+                "time_in_force": o.time_in_force,
+                "quantity": float(o.quantity),
+                "limit_price": float(o.limit_price) if o.limit_price else "",
+                "stop_price": float(o.stop_price) if o.stop_price else "",
+                "status": o.status,
+                "filled_quantity": float(o.filled_quantity),
+                "avg_fill_price": float(o.avg_fill_price) if o.avg_fill_price else "",
+                "placed_at": o.placed_at.strftime("%Y-%m-%d %H:%M:%S") if o.placed_at else "",
+            }
+        )
 
     df = pd.DataFrame(data)
     response = HttpResponse(content_type="text/csv")
@@ -203,18 +227,12 @@ def export_csv(request):
     df.to_csv(response, index=False)
     return response
 
-        # Remove all holdings
-        portfolio.holdings.all().delete()
-
-        serializer = self.get_serializer(portfolio)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 class UserProfileViewSet(
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -225,16 +243,37 @@ class UserProfileViewSet(
         except UserProfile.DoesNotExist:
             raise NotFound("Profile does not exist.")
 
+class MyUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(UserProfileSerializer(request.user).data)
+
+    def patch(self, request):
+        user = request.user
+
+        user.username = request.data.get("username", user.username)
+        user.first_name = request.data.get("first_name", user.first_name)
+        user.last_name = request.data.get("last_name", user.last_name)
+        user.bio = request.data.get("bio", user.bio)
+        user.avatar_url = request.data.get("avatar_url", user.avatar_url)
+
+        user.save()
+        return Response(UserProfileSerializer(user).data)
 
 class UserViewSet(
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
     queryset = User.objects.all()
+
+    def get_queryset(self):
+        # Users queryset, not UserProfile queryset
+        return User.objects.all()
 
     def get_object(self):
         pk = self.kwargs.get("pk")
@@ -242,15 +281,13 @@ class UserViewSet(
         if pk is None:
             return self.request.user
 
-        if not self.request.user.is_staff and str(self.request.user.pk) != pk:
+        if not self.request.user.is_staff and str(self.request.user.pk) != str(pk):
             raise PermissionDenied("You do not have permission to access this user.")
 
         try:
             return User.objects.get(pk=pk)
         except User.DoesNotExist:
             raise NotFound("User not found.")
-    def get_queryset(self):
-        return UserProfile.objects.filter(user=self.request.user)
 
 
 class ContactViewSet(viewsets.ViewSet):
@@ -258,13 +295,12 @@ class ContactViewSet(viewsets.ViewSet):
     GET  /api/account/contact/ -> list() returns {full_name, email}
     POST /api/account/contact/ -> create() stores ContactMessage
     """
-    permission_classes = [permissions.AllowAny]  # can be IsAuthenticated if you want
+    permission_classes = [permissions.AllowAny]
 
     def list(self, request):
         defaults = {"full_name": "", "email": ""}
 
         if request.user.is_authenticated:
-            # Full name priority: "First Last" -> username fallback
             full_name = (request.user.get_full_name() or "").strip()
             if not full_name:
                 full_name = request.user.username
@@ -282,9 +318,7 @@ class ContactViewSet(viewsets.ViewSet):
         ip = request.META.get("REMOTE_ADDR")
         ua = request.META.get("HTTP_USER_AGENT", "")
 
-        profile = None
-        if request.user.is_authenticated:
-            profile = UserProfile.objects.filter(user=request.user).first()
+        profile = UserProfile.objects.filter(user=request.user).first() if request.user.is_authenticated else None
 
         msg: ContactMessage = serializer.save(
             user=profile,
@@ -292,10 +326,8 @@ class ContactViewSet(viewsets.ViewSet):
             user_agent=ua[:2000],
         )
 
-        return Response(
-            {"detail": "Message received.", "id": msg.id},
-            status=status.HTTP_201_CREATED,
-        )
+        return Response({"detail": "Message received.", "id": msg.id}, status=status.HTTP_201_CREATED)
+
 
 class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
     """
@@ -333,28 +365,20 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
                 qs = qs.filter(ts__lte=parsed)
 
         order = self.request.query_params.get("order", "asc").lower()
-        if order == "desc":
-            qs = qs.order_by("-ts")
-        else:
-            qs = qs.order_by("ts")
+        qs = qs.order_by("-ts" if order == "desc" else "ts")
 
         limit = self.request.query_params.get("limit")
         if limit:
             try:
-                limit = max(1, min(int(limit), 5000))
-                qs = qs[:limit]
+                limit_int = max(1, min(int(limit), 5000))
+                qs = qs[:limit_int]
             except ValueError:
                 pass
 
         return qs.select_related("portfolio")
 
     def perform_create(self, serializer):
-        """
-        POST /api/trading/snapshots/
-        Only allow creating snapshots for portfolios owned by the user.
-        """
         user = self.request.user
-        # Allow executor service to post snapshots for any portfolio
         if not (user.username == "executor" and user.is_staff and user.is_superuser):
             if not hasattr(user, "profile"):
                 raise PermissionDenied("Profile missing.")
@@ -366,12 +390,7 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_update(self, serializer):
-        """
-        PUT /api/trading/snapshots/{id}/
-        Only allow updating snapshots for portfolios owned by the user.
-        """
         user = self.request.user
-        # Allow executor service to update snapshots for any portfolio
         if not (user.username == "executor" and user.is_staff and user.is_superuser):
             if not hasattr(user, "profile"):
                 raise PermissionDenied("Profile missing.")
@@ -384,10 +403,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["GET"], url_path="latest")
     def latest(self, request):
-        """
-        GET /api/trading/snapshots/latest/?portfolio=<id>
-        Get latest snapshot for a portfolio.
-        """
         user = request.user
         if not hasattr(user, "profile"):
             raise PermissionDenied("Profile missing.")
@@ -402,8 +417,7 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Invalid portfolio id"}, status=400)
 
         snap = (
-            PortfolioSnapshot.objects
-            .filter(portfolio_id=portfolio_id, portfolio__user=user.profile)
+            PortfolioSnapshot.objects.filter(portfolio_id=portfolio_id, portfolio__user=user.profile)
             .order_by("-ts")
             .first()
         )
@@ -415,10 +429,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["GET"], url_path="chart")
     def chart(self, request):
-        """
-        GET /api/trading/snapshots/chart/?portfolio=<id>&range=1D&interval=10m
-        Returns downsampled + aggregated points for charts.
-        """
         user = request.user
         if not hasattr(user, "profile"):
             raise PermissionDenied("Profile missing.")
@@ -437,7 +447,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
 
         now = timezone.now()
 
-        # range -> start time
         ranges = {
             "1D": timedelta(days=1),
             "1W": timedelta(days=7),
@@ -450,15 +459,13 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
 
         start = now - ranges[range_code]
 
-        # base queryset
         qs = PortfolioSnapshot.objects.filter(
             portfolio_id=portfolio_id,
             portfolio__user=user.profile,
             ts__gte=start,
-            ts__lte=now
+            ts__lte=now,
         )
 
-        # interval bucketing
         if interval == "10m":
             bucket_expr = TruncMinute("ts")
         elif interval == "1h":
@@ -468,7 +475,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         else:
             return Response({"detail": "Invalid interval. Use 10m/1h/1d"}, status=400)
 
-        # aggregate per bucket
         rows = list(
             qs.annotate(bucket=bucket_expr)
             .values("bucket")
@@ -498,13 +504,15 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
             for r in rows
         ]
 
-        return Response({
-            "portfolio_id": portfolio_id,
-            "range": range_code,
-            "interval": interval,
-            "count": len(points),
-            "points": points,
-        })
+        return Response(
+            {
+                "portfolio_id": portfolio_id,
+                "range": range_code,
+                "interval": interval,
+                "count": len(points),
+                "points": points,
+            }
+        )
 
     @action(detail=False, methods=["GET"], url_path="risk")
     def risk(self, request):
@@ -527,7 +535,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         range_code = request.query_params.get("range", "1W")
         interval = request.query_params.get("interval", "1h")
         benchmark_symbol = request.query_params.get("benchmark", "SPY")
-
         rf = request.query_params.get("rf", None)
 
         now = timezone.now()
@@ -548,10 +555,9 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
             portfolio_id=portfolio_id,
             portfolio__user=user.profile,
             ts__gte=start,
-            ts__lte=now
+            ts__lte=now,
         )
 
-        # interval bucketing
         if interval == "10m":
             bucket_expr = TruncMinute("ts")
             periods_per_year = 252 * 6.5 * 6
@@ -564,7 +570,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         else:
             return Response({"detail": "Invalid interval. Use 10m/1h/1d"}, status=400)
 
-        # Portfolio values by bucket
         prows = list(
             qs.annotate(bucket=bucket_expr)
             .values("bucket")
@@ -577,83 +582,70 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
         port_values = [port_series[k] for k in port_keys]
 
         if len(port_values) < 2:
-            return Response({
-                "portfolio_id": portfolio_id,
-                "range": range_code,
-                "interval": interval,
-                "count": len(port_values),
-                "metrics": {
-                    "return_pct": 0.0,
-                    "volatility_pct": 0.0,
-                    "downside_volatility_pct": 0.0,
-                    "max_drawdown_pct": 0.0,
-                    "sharpe": 0.0,
-                    "sortino": 0.0,
-                    "var_95_pct": 0.0,
-                    "cvar_95_pct": 0.0,
-                    "beta": 0.0,
-                    "alpha_pct": 0.0,
-                    "benchmark": benchmark_symbol,
+            return Response(
+                {
+                    "portfolio_id": portfolio_id,
+                    "range": range_code,
+                    "interval": interval,
+                    "count": len(port_values),
+                    "metrics": {
+                        "return_pct": 0.0,
+                        "volatility_pct": 0.0,
+                        "downside_volatility_pct": 0.0,
+                        "max_drawdown_pct": 0.0,
+                        "sharpe": 0.0,
+                        "sortino": 0.0,
+                        "var_95_pct": 0.0,
+                        "cvar_95_pct": 0.0,
+                        "beta": 0.0,
+                        "alpha_pct": 0.0,
+                        "benchmark": benchmark_symbol,
+                    },
                 }
-            })
+            )
 
-        # Risk-free
         if rf is not None:
             try:
                 rf_annual = float(rf)
             except ValueError:
                 return Response({"detail": "Invalid rf. Must be decimal annual (e.g. 0.02)."}, status=400)
         else:
-            # German gov bonds
             rf_annual = 0.02
 
         rf_per_period = (1.0 + rf_annual) ** (1.0 / periods_per_year) - 1.0
 
-        # portfolio returns
         port_rets = []
         for i in range(1, len(port_values)):
             prev = port_values[i - 1]
             cur = port_values[i]
             if prev > 0:
                 port_rets.append((cur - prev) / prev)
-
         if not port_rets:
             port_rets = [0.0]
 
-        # total return
         total_ret = _pct(port_values[0], port_values[-1])
-
-        # max drawdown
         mdd = _max_drawdown(port_values)
 
-        # volatility
         vol = _std(port_rets) * sqrt(periods_per_year)
 
-        # downside volatility
         downside = [r for r in port_rets if r < 0]
         downside_std = _std(downside) * sqrt(periods_per_year) if len(downside) >= 2 else 0.0
 
-        # sharpe
         mean_ret = sum(port_rets) / len(port_rets)
         excess = mean_ret - rf_per_period
         std_rets = _std(port_rets)
         sharpe = (excess / std_rets) * sqrt(periods_per_year) if std_rets > 0 else 0.0
 
-        # sortino
         sortino = (excess / downside_std) if downside_std > 0 else 0.0
 
-        # VaR/CVaR 95%
         var95, cvar95 = _var_cvar(port_rets, alpha=0.95)
 
         # beta/alpha
         benchmark_instr = Instrument.objects.filter(symbol=benchmark_symbol).first()
-
         beta = 0.0
-        alpha = 0.0
         alpha_annual = 0.0
 
         if benchmark_instr:
-            # benchmark bucket expr
             if interval == "10m":
                 bucket_expr_b = TruncMinute("start_time")
             elif interval == "1h":
@@ -664,7 +656,7 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
             bqs = InstrumentIntervalData.objects.filter(
                 instrument=benchmark_instr,
                 start_time__gte=start,
-                start_time__lte=now
+                start_time__lte=now,
             )
 
             brows = list(
@@ -675,7 +667,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
             )
 
             bench_series = {r["bucket"]: _safe_float(r["close"]) for r in brows if r["close"] is not None}
-
             common_keys = sorted(set(port_series.keys()) & set(bench_series.keys()))
 
             if len(common_keys) >= 3:
@@ -688,7 +679,6 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
                 for i in range(1, len(common_keys)):
                     p0, p1 = port_vals[i - 1], port_vals[i]
                     b0, b1 = bench_vals[i - 1], bench_vals[i]
-
                     if p0 > 0 and b0 > 0:
                         aligned_port_rets.append((p1 - p0) / p0)
                         bench_rets.append((b1 - b0) / b0)
@@ -697,34 +687,35 @@ class PortfolioSnapshotViewSet(viewsets.ModelViewSet):
                     mean_p = sum(aligned_port_rets) / len(aligned_port_rets)
                     mean_b = sum(bench_rets) / len(bench_rets)
 
-                    cov = sum((aligned_port_rets[i] - mean_p) * (bench_rets[i] - mean_b)
-                              for i in range(len(aligned_port_rets))) / (len(aligned_port_rets) - 1)
-                    var_b = sum((x - mean_b) ** 2 for x in bench_rets) / (len(bench_rets) - 1)
+                    cov = sum(
+                        (aligned_port_rets[i] - mean_p) * (bench_rets[i] - mean_b)
+                        for i in range(len(aligned_port_rets))
+                    ) / (len(aligned_port_rets) - 1)
 
+                    var_b = sum((x - mean_b) ** 2 for x in bench_rets) / (len(bench_rets) - 1)
                     beta = cov / var_b if var_b > 0 else 0.0
 
-                    # alpha per period
                     alpha = mean_p - (rf_per_period + beta * (mean_b - rf_per_period))
-
-                    # annualize alpha
                     alpha_annual = ((1.0 + alpha) ** periods_per_year - 1.0) if alpha != 0 else 0.0
 
-        return Response({
-            "portfolio_id": portfolio_id,
-            "range": range_code,
-            "interval": interval,
-            "count": len(port_values),
-            "metrics": {
-                "return_pct": total_ret * 100.0,
-                "volatility_pct": vol * 100.0,
-                "downside_volatility_pct": downside_std * 100.0,
-                "max_drawdown_pct": mdd * 100.0,
-                "sharpe": sharpe,
-                "sortino": sortino,
-                "var_95_pct": var95 * 100.0,
-                "cvar_95_pct": cvar95 * 100.0,
-                "beta": beta,
-                "alpha_pct": alpha_annual * 100.0,
-                "benchmark": benchmark_symbol,
+        return Response(
+            {
+                "portfolio_id": portfolio_id,
+                "range": range_code,
+                "interval": interval,
+                "count": len(port_values),
+                "metrics": {
+                    "return_pct": total_ret * 100.0,
+                    "volatility_pct": vol * 100.0,
+                    "downside_volatility_pct": downside_std * 100.0,
+                    "max_drawdown_pct": mdd * 100.0,
+                    "sharpe": sharpe,
+                    "sortino": sortino,
+                    "var_95_pct": var95 * 100.0,
+                    "cvar_95_pct": cvar95 * 100.0,
+                    "beta": beta,
+                    "alpha_pct": alpha_annual * 100.0,
+                    "benchmark": benchmark_symbol,
+                },
             }
-        })
+        )

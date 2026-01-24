@@ -3,6 +3,22 @@ export type UserProfile = {
     user: number;
     bio: string;
     avatar_url?: string;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    subscription?: {
+        package_id: number;
+        package_price: string;
+        subscription_type: {
+            id: number;
+            name: string;
+            price: string;
+            duration_days: number;
+        };
+        start_date: string;
+        end_date: string;
+        is_active: boolean;
+    } | null;
 };
 
 export type UserUpdatePayload = {
@@ -42,4 +58,3 @@ export async function updateMyProfile(payload: UserUpdatePayload) {
     }
     return r.json();
 }
-

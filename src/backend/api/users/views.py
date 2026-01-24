@@ -1,3 +1,12 @@
+from django.contrib.auth import get_user_model
+from rest_framework import viewsets, permissions, mixins, status
+from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied, NotFound
+
+from .models import UserPortfolio, UserProfile
+from .serializers import UserPortofolioSerializer, UserProfileSerializer, UserSerializer
+from rest_framework import permissions
+User = get_user_model()
 from datetime import timedelta
 from decimal import Decimal
 from math import sqrt
@@ -32,14 +41,36 @@ from .serializers import (
 
 
 
-class UserPortfolioViewSet(viewsets.ReadOnlyModelViewSet):
+class UserPortfolioViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet
+):
     serializer_class = UserPortofolioSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        profile = self.request.user.profile
-        return UserPortfolio.objects.filter(user=profile)
+        return UserPortfolio.objects.filter(user=self.request.user.profile)
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user.profile)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        DELETE does not remove the portfolio.
+        It resets it to the default state.
+        """
+        portfolio = self.get_object()
+
+        if portfolio.user != request.user.profile:
+            raise PermissionDenied("You do not own this portfolio.")
+
+        # Reset business state
+        portfolio.balance = 10000
+        portfolio.is_active = True
+        portfolio.save(update_fields=["balance", "is_active"])
 @csrf_exempt
 @require_POST
 def import_csv(request):
@@ -172,53 +203,54 @@ def export_csv(request):
     df.to_csv(response, index=False)
     return response
 
-class UserProfileViewSet(viewsets.ModelViewSet):
-    """
-    GET /api/users/user-profile/ -> list current user's profile(s)
-    PATCH /api/users/user-profile/{pk}/ -> update profile (only own profile allowed)
-    PATCH /api/users/user-profile/me/ -> update current user's profile + optional user fields
-    """
+        # Remove all holdings
+        portfolio.holdings.all().delete()
+
+        serializer = self.get_serializer(portfolio)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserProfileViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_object(self):
+        try:
+            return self.request.user.profile
+        except UserProfile.DoesNotExist:
+            raise NotFound("Profile does not exist.")
+
+
+class UserViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+
+    def get_object(self):
+        pk = self.kwargs.get("pk")
+
+        if pk is None:
+            return self.request.user
+
+        if not self.request.user.is_staff and str(self.request.user.pk) != pk:
+            raise PermissionDenied("You do not have permission to access this user.")
+
+        try:
+            return User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            raise NotFound("User not found.")
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
-
-    def get_serializer_class(self):
-        # Use the update serializer for write operations
-        if self.action in ("update", "partial_update", "me"):
-            from .serializers import UserProfileUpdateSerializer
-
-            return UserProfileUpdateSerializer
-        return UserProfileSerializer
-
-    def perform_update(self, serializer):
-        # ensure user owns the profile
-        instance = serializer.instance
-        if instance.user != self.request.user:
-            raise PermissionDenied("You can only update your own profile.")
-        serializer.save()
-
-    @action(detail=False, methods=["GET", "PATCH"], url_path="me")
-    def me(self, request):
-        """
-        PATCH /api/users/user-profile/me/
-        Accepts fields: bio, avatar_url, username, first_name, last_name
-        Updates both UserProfile and User accordingly for the authenticated user.
-        """
-        user = request.user
-        if not hasattr(user, "profile"):
-            return Response({"detail": "Profile missing."}, status=400)
-
-        profile = user.profile
-        if request.method == "GET":
-            return Response(UserProfileSerializer(profile).data)
-
-        # PATCH
-        serializer = self.get_serializer(profile, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(UserProfileSerializer(profile).data)
 
 
 class ContactViewSet(viewsets.ViewSet):

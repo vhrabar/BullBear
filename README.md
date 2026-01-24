@@ -37,7 +37,7 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
                                                              
 
 
-# Upotrijebljene Tehnologije i Alata
+# Upotrijebljene Tehnologije, Alati i Usluge
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green)
 ![Django-Rest](https://img.shields.io/badge/django--rest--framework-blue?style=for-the-badge&labelColor=333333&logo=django&logoColor=white&color=blue)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=white&style=for-the-badge)
@@ -47,10 +47,13 @@ Ovaj projekt je reultat timskog rada u sklopu projeknog zadatka kolegija [Progra
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
 ![NNGINX](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white&style=for-the-badge)
-![DO](https://img.shields.io/badge/DigitalOcean-0080FF?style=for-the-badge&logo=digitalocean&logoColor=white)
 
 ![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/Github%20Actions-282a2e?style=for-the-badge&logo=githubactions&logoColor=367cfe)
+![DO](https://img.shields.io/badge/DigitalOcean-0080FF?style=for-the-badge&logo=digitalocean&logoColor=white)
+[![PayPal](https://img.shields.io/badge/PayPal-003087?logo=paypal&logoColor=fff&style=for-the-badge)](f)
+[![Stripe](https://img.shields.io/badge/Stripe-5851DD?logo=stripe&logoColor=fff&style=for-the-badge)](#)
+[![Massive.com](https://img.shields.io/badge/Massive-007AC1?style=for-the-badge&logoColor=fff)](#)
 
 
 ![VSCode](https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white)

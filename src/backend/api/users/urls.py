@@ -3,8 +3,9 @@ from rest_framework.routers import DefaultRouter
 from .views import UserPortfolioViewSet, UserProfileViewSet, ContactViewSet, PortfolioSnapshotViewSet, export_csv, import_csv
 
 router = DefaultRouter()
-router.register(r'portofolio-details', UserPortfolioViewSet, basename='portfolio-details')
+router.register(r'user-portfolio', UserPortfolioViewSet, basename='portfolio-details')
 router.register(r'user-profile', UserProfileViewSet, basename='user-profile')
+router.register(r'user-user', UserViewSet, basename='user')
 router.register(r"contact", ContactViewSet, basename="contact")
 router.register(r"snapshots", PortfolioSnapshotViewSet, basename="snapshots")
 

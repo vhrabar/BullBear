@@ -1,0 +1,41 @@
+.profile-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 100%;
+    object-fit: cover;
+}
+
+.profile-name {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.profile-email {
+    color: #666;
+    font-size: 14px;
+}
+
+.edit-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    text-decoration: none;
+    color: black;
+    border-radius: 4px;
+}
+
+.profile-about {
+    margin-top: 24px;
+}

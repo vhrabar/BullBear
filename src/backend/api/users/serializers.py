@@ -15,6 +15,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "is_paid_user",
+        ]
+        read_only_fields = [
+            "id",
+            "is_paid_user",
+        ]
 
 class ContactDefaultsSerializer(serializers.Serializer):
     full_name = serializers.CharField(required=False, allow_blank=True)

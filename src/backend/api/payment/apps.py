@@ -1,9 +1,9 @@
 from django.apps import AppConfig
 
 
-class ApiConfig(AppConfig):
+class PaymentConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'api.trading'
+    name = 'api.payment'
 
     def ready(self):
         from . import signals

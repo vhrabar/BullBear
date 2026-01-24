@@ -9,8 +9,8 @@ def create_checkout_session(user, subscription_type, success_url, cancel_url):
         mode="payment",
         customer_email=user.email,
         metadata={
-            "user_id": user.id,
-            "subscription_type_id": subscription_type.id,
+            "user_id": str(user.id),
+            "subscription_type_id": str(subscription_type.id),
         },
         line_items=[{
             "price_data": {

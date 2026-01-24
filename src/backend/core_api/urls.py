@@ -21,6 +21,8 @@ from django.conf import settings
 from django.shortcuts import redirect
 from urllib.parse import urlparse
 
+from api.payment.views import SubscriptionSuccessView, SubscriptionCancelView
+
 urlpatterns = [
     # Admin site
     path('admin/', admin.site.urls),
@@ -59,9 +61,7 @@ urlpatterns = [
 ]
 
 
-# Lightweight redirect views to handle external payment provider redirects
 def _frontend_subscription_base():
-    # Prefer an explicit FRONTEND_BASE_URL setting if available
     frontend_base = getattr(settings, 'FRONTEND_BASE_URL', None)
     if frontend_base:
         return frontend_base.rstrip('/')
@@ -86,18 +86,15 @@ def subscription_cancel_redirect(request):
     return redirect(target)
 
 
-# Expose subscription redirect endpoints at top-level as some payment providers may return here
-# (mapped to both /subscription/... and /api/subscription/...) to be tolerant of different callback URLs
+#
 urlpatterns += [
-    # without trailing slash
-    path('subscription/success', subscription_success_redirect),
-    path('subscription/cancel', subscription_cancel_redirect),
-    path('api/subscription/success', subscription_success_redirect),
-    path('api/subscription/cancel', subscription_cancel_redirect),
+    path('subscription/success', SubscriptionSuccessView.as_view()),
+    path('subscription/cancel', SubscriptionCancelView.as_view()),
+    path('api/subscription/success', SubscriptionSuccessView.as_view()),
+    path('api/subscription/cancel', SubscriptionCancelView.as_view()),
 
-    # with trailing slash variants to be tolerant of providers appending a slash
-    path('subscription/success/', subscription_success_redirect),
-    path('subscription/cancel/', subscription_cancel_redirect),
-    path('api/subscription/success/', subscription_success_redirect),
-    path('api/subscription/cancel/', subscription_cancel_redirect),
+    path('subscription/success/', SubscriptionSuccessView.as_view()),
+    path('subscription/cancel/', SubscriptionCancelView.as_view()),
+    path('api/subscription/success/', SubscriptionSuccessView.as_view()),
+    path('api/subscription/cancel/', SubscriptionCancelView.as_view()),
 ]

@@ -7,10 +7,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 import stripe
 from django.conf import settings
 from django.http import HttpResponse
+import logging
 
 from .models import SubscriptionType, UserSubscription, Payment, UserSubscriptionPackage
 from .services.stripe_service import create_checkout_session
 from .services.paypal_service import create_order, capture_order
+
+logger = logging.getLogger(__name__)
 
 
 class StripeCheckoutView(APIView):
@@ -22,8 +25,9 @@ class StripeCheckoutView(APIView):
         )
 
         base = settings.BASE_URL.rstrip('/')
-        success_url = f"{base}/api/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
-        cancel_url = f"{base}/api/subscription/cancel?session_id={{CHECKOUT_SESSION_ID}}"
+        # Ensure redirect goes to the payment app endpoints so SubscriptionSuccessView handles creation
+        success_url = f"{base}/api/payment/subscription/success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{base}/api/payment/subscription/cancel?session_id={{CHECKOUT_SESSION_ID}}"
 
         session = create_checkout_session(
             user=request.user,
@@ -39,15 +43,24 @@ class StripeWebhookView(APIView):
     permission_classes = []
 
     def post(self, request):
+        # Print raw webhook arrival for debugging
+        try:
+            print("[stripe webhook] received request")
+        except Exception:
+            pass
+
         event = stripe.Webhook.construct_event(
             request.body,
             request.META.get("HTTP_STRIPE_SIGNATURE"),
             settings.STRIPE_WEBHOOK_SECRET,
         )
 
+        print(f"[stripe webhook] event type={event.get('type')}")
+
         if event["type"] == "checkout.session.completed":
             session = event["data"]["object"]
             meta = session.get("metadata", {}) or {}
+            print(f"[stripe webhook] session id={session.get('id')} metadata={meta}")
             subscription_type_id = meta.get("subscription_type_id")
             user_id = meta.get("user_id")
 
@@ -55,6 +68,7 @@ class StripeWebhookView(APIView):
                 try:
                     subscription_type = SubscriptionType.objects.get(id=subscription_type_id)
                 except SubscriptionType.DoesNotExist:
+                    print(f"[stripe webhook] SubscriptionType {subscription_type_id} not found")
                     return HttpResponse(status=400)
 
                 package, _ = UserSubscriptionPackage.objects.get_or_create(
@@ -64,6 +78,7 @@ class StripeWebhookView(APIView):
                 )
 
                 if not Payment.objects.filter(provider_payment_id=session.get("id"), provider="stripe").exists():
+                    print(f"[stripe webhook] creating Payment and UserSubscription for user_id={user_id}")
                     Payment.objects.create(
                         user_id=user_id,
                         provider="stripe",
@@ -169,19 +184,37 @@ class SubscriptionSuccessView(APIView):
 
         if session_id:
             try:
+                print(f"[stripe success] retrieving session {session_id}")
                 session = stripe.checkout.Session.retrieve(session_id, expand=["payment_intent"])
-            except Exception:
+                print(f"[stripe success] retrieved session id={getattr(session, 'id', None)}")
+            except Exception as exc:
+                print(f"[stripe success] failed to retrieve session {session_id}: {exc}")
                 frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
                 return redirect(frontend_base.rstrip("/") + "/subscription/success")
 
-            paid = (
-                getattr(session, "payment_status", None) == "paid"
-                or getattr(getattr(session, "payment_intent", None), "status", None) == "succeeded"
-            )
+            paid = False
+            try:
+                if getattr(session, "payment_status", None) == "paid":
+                    paid = True
+
+                pi = getattr(session, "payment_intent", None)
+                if getattr(pi, "status", None) == "succeeded":
+                    paid = True
+
+                charges = getattr(getattr(pi, "charges", None), "data", None)
+                if charges and len(charges) > 0:
+                    first = charges[0]
+                    print(f"[stripe success] charge first={first}")
+                    if first.get('status') == 'succeeded' or first.get('paid') is True:
+                        paid = True
+            except Exception as exc:
+                print(f"[stripe success] error evaluating payment status: {exc}")
 
             meta = getattr(session, "metadata", {}) or {}
             user_id = meta.get("user_id")
             subscription_type_id = meta.get("subscription_type_id")
+
+            print(f"[stripe success] paid={paid} metadata={meta}")
 
             if paid and user_id and subscription_type_id:
                 if not Payment.objects.filter(provider_payment_id=session.id, provider="stripe").exists():
@@ -193,6 +226,8 @@ class SubscriptionSuccessView(APIView):
                             price=subscription_type.price,
                             defaults={"is_active": True},
                         )
+
+                        print(f"[stripe success] creating DB entries user_id={user_id} subscription_type={subscription_type_id}")
 
                         Payment.objects.create(
                             user_id=user_id,
@@ -214,7 +249,11 @@ class SubscriptionSuccessView(APIView):
                             is_active=True,
                         )
                     except SubscriptionType.DoesNotExist:
-                        pass
+                        print(f"[stripe success] SubscriptionType {subscription_type_id} not found")
+                else:
+                    print(f"[stripe success] payment with id={session.id} already exists, skipping creation")
+            else:
+                print("[stripe success] session not paid or missing metadata; skipping subscription creation")
 
         frontend_base = getattr(settings, "FRONTEND_BASE_URL", "/")
         return redirect(frontend_base.rstrip("/") + "/subscription/success")

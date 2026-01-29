@@ -61,6 +61,37 @@ and adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - leaderboard with all active users
 
 
+# [0.8.0] - 2026-01-22
+### Added
+- CSV export of portfolio and transaction history
+- import transactions via CSV upload
+
+### Fixed
+- minor bug fixes and performance improvements
+
+# [0.9.0] - 2026-01-23
+### Added
+- profile settings page
+- user tier system
+- payment integration for premium features (Paypal/Stripe)
+
+### Changed
+- improved security measures for user data
+- optimized database queries for faster load times
+- updated UI components for better user experience
+- refactored codebase for maintainability
+
+# [1.0.0] - 2026-01-23
+### Added
+- initial stable release
+- comprehensive testing suite
+- detailed documentation for users and developers
+
+### Changed
+- finalized all features for production readiness
+
+
+
 
 
 
